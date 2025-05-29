@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Real-time Chat</title>
+    <script src="https://cdn.socket.io/socket.io-3.0.3.min.js"></script>
+</head>
+<body>
+    <h2>Real-time Chat!</h2>
+    <input type="text" id="username" placeholder="Nhập tên của bạn...">
+    <div id="chat" style="height:300px; border:1px solid #ccc; overflow:auto; margin-bottom: 10px;"></div>
+    <input type="text" id="message" placeholder="Nhập tin nhắn..." autofocus>
+    <button onclick="sendMessage()">Gửi</button>
+    <script>
+        var socket = io();
+        var chat = document.getElementById('chat');
+        var usernameInput = document.getElementById('username');
+        var messageInput = document.getElementById('message');
+
+        socket.on('message', function(msg){
+            var item = document.createElement('div');
+            item.textContent = msg;
+            chat.appendChild(item);
+            chat.scrollTop = chat.scrollHeight;
+        });
+
+        function sendMessage(){
+            var username = usernameInput.value || "Ẩn danh";
+            var message = messageInput.value;
+            if(message.trim() === "") return;
+            socket.send(username + ": " + message);
+            messageInput.value = "";
+        }
+
+        messageInput.addEventListener("keypress", function(e) {
+            if (e.key === "Enter") sendMessage();
+        });
+    </script>
+</body>
+</html>
