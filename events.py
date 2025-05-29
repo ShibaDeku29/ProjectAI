@@ -1,6 +1,6 @@
 from flask import request
 from flask_socketio import emit
-from sqlalchemy import desc # Để sắp xếp tin nhắn theo thời gian mới nhất
+from sqlalchemy import desc
 
 # Hàm register_events giờ sẽ nhận thêm đối tượng db và current_user
 def register_events(socketio, db, current_user):
@@ -34,17 +34,18 @@ def register_events(socketio, db, current_user):
         for msg in reversed(messages):
             emit('message', msg.to_dict())
 
-        # Gửi thông báo hệ thống về việc có người dùng mới tham gia
-        if current_user.is_authenticated:
-            emit('message', {'username': 'Hệ thống', 'message': f'Người dùng {current_user.username} đã tham gia.'}, broadcast=True)
-        else:
-            emit('message', {'username': 'Hệ thống', 'message': f'Một người dùng mới ({request.sid}) đã tham gia.'}, broadcast=True)
+        # # Đã bình luận dòng emit tin nhắn hệ thống khi kết nối
+        # if current_user.is_authenticated:
+        #     emit('message', {'username': 'Hệ thống', 'message': f'Người dùng {current_user.username} đã tham gia.'}, broadcast=True)
+        # else:
+        #     emit('message', {'username': 'Hệ thống', 'message': f'Một người dùng mới ({request.sid}) đã tham gia.'}, broadcast=True)
 
 
     @socketio.on('disconnect')
     def handle_disconnect():
         print('Client đã ngắt kết nối:', request.sid)
-        if current_user.is_authenticated:
-            emit('message', {'username': 'Hệ thống', 'message': f'Người dùng {current_user.username} đã rời khỏi.'}, broadcast=True)
-        else:
-            emit('message', {'username': 'Hệ thống', 'message': f'Một người dùng ({request.sid}) đã rời khỏi.'}, broadcast=True)
+        # # Đã bình luận dòng emit tin nhắn hệ thống khi ngắt kết nối
+        # if current_user.is_authenticated:
+        #     emit('message', {'username': 'Hệ thống', 'message': f'Người dùng {current_user.username} đã rời khỏi.'}, broadcast=True)
+        # else:
+        #     emit('message', {'username': 'Hệ thống', 'message': f'Một người dùng ({request.sid}) đã rời khỏi.'}, broadcast=True)
