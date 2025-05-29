@@ -1,50 +1,51 @@
-from flask import request
+from flask import request, current_app
 from flask_socketio import emit
+from datetime import datetime
 
-def register_events(socketio):
-    """
-    Hàm này đăng ký tất cả các xử lý sự kiện SocketIO.
-    Truyền đối tượng socketio từ app.py vào để đăng ký các sự kiện.
-    """
+def register_events(socketio, mongo): # Hàm register_events nhận đối tượng 'mongo'
+    messages_collection = mongo.db.messages # Truy cập collection 'messages'
 
     @socketio.on('message')
     def handle_message(data):
-        """
-        Xử lý sự kiện 'message' khi client gửi tin nhắn.
-        Dữ liệu mong đợi là một từ điển với 'username' và 'message'.
-        """
-        username = data.get('username', 'Ẩn danh') # Lấy tên người dùng, mặc định 'Ẩn danh'
-        message = data.get('message', '') # Lấy nội dung tin nhắn
+        username = data.get('username', 'Ẩn danh')
+        message_content = data.get('message', '')
 
-        # Chỉ xử lý tin nhắn nếu không rỗng sau khi loại bỏ khoảng trắng
-        if message.strip():
-            print(f'Tin nhắn từ {username}: {message}')
-            # Phát lại tin nhắn tới tất cả các client đã kết nối
-            emit('message', {'username': username, 'message': message}, broadcast=True)
+        if message_content.strip():
+            print(f'Tin nhắn từ {username}: {message_content}')
+
+            message_document = {
+                'username': username,
+                'message': message_content,
+                'timestamp': datetime.now()
+            }
+
+            messages_collection.insert_one(message_document)
+
+            emittable_message = {
+                'username': message_document['username'],
+                'message': message_document['message'],
+                'timestamp': message_document['timestamp'].isoformat()
+            }
+            emit('message', emittable_message, broadcast=True)
 
     @socketio.on('connect')
     def handle_connect():
-        """
-        Xử lý sự kiện 'connect' khi một client mới kết nối.
-        Sử dụng request.sid để lấy ID phiên của client.
-        """
         print('Client đã kết nối:', request.sid)
-        # Gửi thông báo hệ thống tới tất cả các client về người dùng mới tham gia
+
+        messages_cursor = messages_collection.find().sort('timestamp', -1).limit(50)
+        messages_list = list(messages_cursor)
+        for msg_doc in reversed(messages_list):
+            emittable_message = {
+                'username': msg_doc['username'],
+                'message': msg_doc['message'],
+                'timestamp': msg_doc['timestamp'].isoformat()
+            }
+            emit('message', emittable_message)
+
         emit('message', {'username': 'Hệ thống', 'message': f'Một người dùng mới ({request.sid}) đã tham gia.'}, broadcast=True)
+
 
     @socketio.on('disconnect')
     def handle_disconnect():
-        """
-        Xử lý sự kiện 'disconnect' khi một client ngắt kết nối.
-        Sử dụng request.sid để lấy ID phiên của client.
-        """
         print('Client đã ngắt kết nối:', request.sid)
-        # Gửi thông báo hệ thống tới tất cả các client về việc người dùng rời đi
         emit('message', {'username': 'Hệ thống', 'message': f'Một người dùng ({request.sid}) đã rời khỏi.'}, broadcast=True)
-
-    # Bạn có thể thêm các xử lý sự kiện SocketIO khác ở đây.
-    # Ví dụ về một sự kiện 'typing' (đang gõ):
-    # @socketio.on('typing')
-    # def handle_typing(data):
-    #     # Phát sự kiện 'typing_indicator' tới các client khác (không bao gồm người gửi)
-    #     emit('typing_indicator', {'username': data.get('username', 'Ẩn danh')}, broadcast=True, include_self=False)

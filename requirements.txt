@@ -1,3 +1,6 @@
+# requirements.txt
 Flask==3.0.3
 Flask-SocketIO==5.3.6
 eventlet==0.35.1
+Flask-PyMongo==2.3.0  # Thêm thư viện này
+gunicorn==22.0.0      # Giữ nguyên nếu dùng cho Production

@@ -2,9 +2,11 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"> <title>Trò chuyện Thời gian thực</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trò chuyện Thời gian thực</title>
     <script src="https://cdn.socket.io/socket.io-3.0.3.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet"> <style>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <style>
         /* CSS Reset & General Styles */
         * {
             box-sizing: border-box;
@@ -12,24 +14,24 @@
             padding: 0;
         }
         body {
-            font-family: 'Roboto', Arial, sans-serif; /* Sử dụng font Roboto */
+            font-family: 'Roboto', Arial, sans-serif;
             margin: 0;
-            background-color: #f0f2f5; /* Nền màu xám nhạt */
+            background-color: #f0f2f5;
             color: #333;
             display: flex;
             justify-content: center;
             align-items: center;
-            min-height: 100vh; /* Đảm bảo chiều cao tối thiểu 100% viewport */
+            min-height: 100vh;
         }
         .chat-wrapper {
             background-color: #ffffff;
             border-radius: 12px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1); /* Bóng đổ mềm mại hơn */
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
             width: 90%;
-            max-width: 700px; /* Chiều rộng tối đa cho khung chat */
+            max-width: 700px;
             display: flex;
             flex-direction: column;
-            overflow: hidden; /* Đảm bảo nội dung không tràn ra ngoài border-radius */
+            overflow: hidden;
         }
         h2 {
             color: #2c3e50;
@@ -38,11 +40,11 @@
             border-bottom: 1px solid #eee;
             margin-bottom: 0;
             font-size: 1.8em;
-            background-color: #e0f2f7; /* Màu nền cho tiêu đề */
+            background-color: #e0f2f7;
         }
         #chat-container {
-            flex-grow: 1; /* Cho phép chat container chiếm hết không gian */
-            height: 400px; /* Chiều cao cố định ban đầu */
+            flex-grow: 1;
+            height: 400px;
             overflow-y: auto;
             padding: 20px;
             border-bottom: 1px solid #eee;
@@ -51,26 +53,26 @@
         .message-row {
             margin-bottom: 12px;
             padding: 8px 12px;
-            border-radius: 18px; /* Bo tròn hơn */
-            max-width: 80%; /* Giới hạn chiều rộng tin nhắn */
+            border-radius: 18px;
+            max-width: 80%;
             word-wrap: break-word;
             line-height: 1.4;
             box-shadow: 0 1px 2px rgba(0,0,0,0.05);
         }
         .message-row.sent {
-            background-color: #dcf8c6; /* Màu xanh lá nhạt cho tin nhắn gửi đi */
-            align-self: flex-end; /* Căn phải */
-            margin-left: auto; /* Đẩy tin nhắn sang phải */
+            background-color: #dcf8c6;
+            align-self: flex-end;
+            margin-left: auto;
         }
         .message-row.received {
-            background-color: #e0f7fa; /* Màu xanh da trời nhạt cho tin nhắn nhận được */
-            align-self: flex-start; /* Căn trái */
-            margin-right: auto; /* Đẩy tin nhắn sang trái */
+            background-color: #e0f7fa;
+            align-self: flex-start;
+            margin-right: auto;
         }
         .username {
-            font-weight: 700; /* Dùng font-weight 700 từ Roboto */
-            color: #007bff; /* Màu xanh tươi sáng hơn */
-            display: block; /* Tên người dùng trên một dòng riêng */
+            font-weight: 700;
+            color: #007bff;
+            display: block;
             margin-bottom: 4px;
         }
         .message-content {
@@ -87,9 +89,9 @@
         #username-input, #message-input {
             padding: 12px 15px;
             border: 1px solid #ddd;
-            border-radius: 25px; /* Bo tròn các trường nhập liệu */
+            border-radius: 25px;
             font-size: 1em;
-            outline: none; /* Bỏ viền outline khi focus */
+            outline: none;
             transition: border-color 0.3s ease, box-shadow 0.3s ease;
         }
         #username-input:focus, #message-input:focus {
@@ -98,17 +100,17 @@
         }
         #username-input {
             flex-shrink: 0;
-            width: 160px; /* Điều chỉnh lại chiều rộng */
+            width: 160px;
         }
         #message-input {
             flex-grow: 1;
         }
         button {
             padding: 12px 25px;
-            background-color: #28a745; /* Màu xanh lá đậm hơn */
+            background-color: #28a745;
             color: white;
             border: none;
-            border-radius: 25px; /* Bo tròn nút gửi */
+            border-radius: 25px;
             cursor: pointer;
             font-size: 1em;
             font-weight: 700;
@@ -116,7 +118,7 @@
         }
         button:hover {
             background-color: #218838;
-            transform: translateY(-1px); /* Hiệu ứng nhấn nhẹ */
+            transform: translateY(-1px);
         }
         button:active {
             transform: translateY(0);
@@ -126,7 +128,7 @@
         @media (max-width: 600px) {
             .chat-wrapper {
                 width: 100%;
-                height: 100vh; /* Chiếm toàn bộ màn hình trên thiết bị nhỏ */
+                height: 100vh;
                 border-radius: 0;
                 box-shadow: none;
             }
@@ -135,15 +137,15 @@
                 align-items: stretch;
             }
             #username-input {
-                width: 100%; /* Username input chiếm toàn bộ chiều rộng */
-                margin-bottom: 10px; /* Tạo khoảng cách dưới username input */
+                width: 100%;
+                margin-bottom: 10px;
             }
             #message-input-area {
-                flex-direction: column; /* Xếp chồng các trường nhập liệu trên thiết bị nhỏ */
+                flex-direction: column;
                 padding: 10px;
             }
             button {
-                width: 100%; /* Nút gửi chiếm toàn bộ chiều rộng */
+                width: 100%;
             }
         }
     </style>
@@ -194,6 +196,12 @@
             var messageContentSpan = document.createElement('span');
             messageContentSpan.classList.add('message-content');
             messageContentSpan.textContent = data.message;
+
+            // Tùy chọn: hiển thị timestamp (nếu muốn)
+            // var timestampSpan = document.createElement('span');
+            // timestampSpan.classList.add('timestamp');
+            // timestampSpan.textContent = new Date(data.timestamp).toLocaleTimeString(); // Định dạng thời gian
+            // messageRow.appendChild(timestampSpan);
 
             messageRow.appendChild(usernameSpan);
             messageRow.appendChild(messageContentSpan);
