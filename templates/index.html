@@ -23,16 +23,60 @@
             align-items: center;
             min-height: 100vh;
         }
-        .chat-wrapper {
+        .main-container { /* Thêm một container chính để chứa cả chat và sidebar */
+            display: flex;
             background-color: #ffffff;
             border-radius: 12px;
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
             width: 90%;
-            max-width: 700px;
-            display: flex;
-            flex-direction: column;
+            max-width: 1000px; /* Tăng chiều rộng tối đa */
             overflow: hidden;
         }
+        .chat-wrapper {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid #eee; /* Đường kẻ phân cách với sidebar */
+            min-width: 500px; /* Chiều rộng tối thiểu cho khung chat */
+        }
+        .online-users-sidebar {
+            width: 250px; /* Chiều rộng sidebar */
+            background-color: #f8fcfd;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            border-left: 1px solid #eee;
+        }
+        .online-users-sidebar h3 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+            text-align: center;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+        }
+        #online-users-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            flex-grow: 1;
+            overflow-y: auto;
+        }
+        #online-users-list li {
+            padding: 8px 0;
+            color: #007bff;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+        }
+        #online-users-list li::before {
+            content: '•'; /* Dấu chấm tròn */
+            color: #28a745; /* Màu xanh lá cho dấu chấm */
+            font-size: 1.5em;
+            line-height: 0;
+            margin-right: 8px;
+        }
+
         h2 {
             color: #2c3e50;
             text-align: center;
@@ -131,7 +175,6 @@
             color: white;
             border: none;
             border-radius: 25px;
-            cursor: pointer;
             font-size: 1em;
             font-weight: 700;
             transition: background-color 0.3s ease, transform 0.2s ease;
@@ -167,16 +210,26 @@
         }
 
         /* Responsive Adjustments */
-        @media (max-width: 600px) {
-            .chat-wrapper {
+        @media (max-width: 768px) { /* Điều chỉnh breakpoint cho responsive */
+            .main-container {
+                flex-direction: column; /* Xếp chồng chat và sidebar trên màn hình nhỏ */
                 width: 100%;
                 height: 100vh;
                 border-radius: 0;
                 box-shadow: none;
+                max-width: none;
             }
-            body {
-                padding: 0;
-                align-items: stretch;
+            .chat-wrapper {
+                min-width: unset;
+                border-right: none;
+                border-bottom: 1px solid #eee;
+            }
+            .online-users-sidebar {
+                width: 100%;
+                height: 150px; /* Chiều cao cố định cho sidebar trên mobile */
+                border-left: none;
+                border-top: 1px solid #eee;
+                order: -1; /* Đặt sidebar lên trên chat */
             }
             #message-input-area {
                 flex-direction: column;
@@ -189,50 +242,63 @@
     </style>
 </head>
 <body>
-    <div class="chat-wrapper">
-        <h2>Trò chuyện Thời gian thực!</h2>
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                <ul class="flash-messages">
-                {% for category, message in messages %}
-                    <li class="flash-message {{ category }}">{{ message }}</li>
-                {% endfor %}
-                </ul>
-            {% endif %}
-        {% endwith %}
+    <div class="main-container">
+        <div class="chat-wrapper">
+            <h2>Trò chuyện Thời gian thực!</h2>
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    <ul class="flash-messages">
+                    {% for category, message in messages %}
+                        <li class="flash-message {{ category }}">{{ message }}</li>
+                    {% endfor %}
+                    </ul>
+                {% endif %}
+            {% endwith %}
 
-        <div class="user-info">
-            {% if current_user.is_authenticated %}
-                <span>Chào mừng, {{ current_user.username }}!</span>
-                <a href="{{ url_for('logout') }}">Đăng xuất</a>
-            {% else %}
-                <span>Bạn chưa đăng nhập.</span>
-                <a href="{{ url_for('login') }}">Đăng nhập</a>
-            {% endif %}
+            <div class="user-info">
+                {% if current_user.is_authenticated %}
+                    <span>Chào mừng, <strong>{{ current_user.username }}</strong>!</span>
+                    <a href="{{ url_for('logout') }}">Đăng xuất</a>
+                {% else %}
+                    <span>Bạn chưa đăng nhập.</span>
+                    <a href="{{ url_for('login') }}">Đăng nhập</a>
+                {% endif %}
+            </div>
+            
+            <div id="chat-container"></div>
+            <div id="message-input-area">
+                <input type="text" id="message-input" placeholder="Nhập tin nhắn..." autofocus>
+                <button onclick="sendMessage()">Gửi</button>
+            </div>
         </div>
-        
-        <div id="chat-container"></div>
-        <div id="message-input-area">
-            <input type="text" id="message-input" placeholder="Nhập tin nhắn..." autofocus>
-            <button onclick="sendMessage()">Gửi</button>
+
+        <div class="online-users-sidebar">
+            <h3>Người dùng trực tuyến</h3>
+            <ul id="online-users-list">
+                </ul>
         </div>
     </div>
 
     <script>
         var socket = io();
         var chatContainer = document.getElementById('chat-container');
-        // var usernameInput = document.getElementById('username-input'); // Không cần usernameInput nữa
         var messageInput = document.getElementById('message-input');
+        var onlineUsersList = document.getElementById('online-users-list'); // Lấy phần tử danh sách người dùng
 
-        // Không cần khôi phục username từ localStorage nữa vì đã dùng Flask-Login
+        // Lắng nghe sự kiện 'update_user_list' từ server
+        socket.on('update_user_list', function(userList){
+            onlineUsersList.innerHTML = ''; // Xóa danh sách cũ
+            userList.forEach(function(username){
+                var listItem = document.createElement('li');
+                listItem.textContent = username;
+                onlineUsersList.appendChild(listItem);
+            });
+        });
 
         socket.on('message', function(data){
             var messageRow = document.createElement('div');
             messageRow.classList.add('message-row');
 
-            // Thêm class 'sent' hoặc 'received'
-            // So sánh với username được render trên trang (trong user-info)
-            // hoặc gửi username từ backend
             var loggedInUsername = "{{ current_user.username if current_user.is_authenticated else '' }}";
             if (data.username === loggedInUsername) {
                 messageRow.classList.add('sent');
@@ -259,7 +325,6 @@
             var message = messageInput.value.trim();
             if (message === "") return;
 
-            // Không gửi username từ frontend nữa, backend sẽ lấy từ current_user
             socket.emit('message', { message: message });
             messageInput.value = "";
         }
