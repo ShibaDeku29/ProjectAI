@@ -68,6 +68,14 @@
             font-weight: bold;
             display: flex;
             align-items: center;
+            cursor: pointer; /* Thêm con trỏ để có thể click chọn */
+            transition: background-color 0.2s ease;
+        }
+        #online-users-list li:hover {
+            background-color: #e6f7ff; /* Màu nền khi hover */
+        }
+        #online-users-list li.selected {
+            background-color: #cceeff; /* Màu nền khi được chọn */
         }
         #online-users-list li::before {
             content: '•'; /* Dấu chấm tròn */
@@ -75,6 +83,23 @@
             font-size: 1.5em;
             line-height: 0;
             margin-right: 8px;
+        }
+        .recipient-select-area {
+            margin-bottom: 10px;
+            text-align: left;
+        }
+        .recipient-select-area label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+        .recipient-select-area select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 0.9em;
         }
 
         h2 {
@@ -139,6 +164,10 @@
             align-self: flex-start;
             margin-right: auto;
         }
+        .message-row.private { /* Định kiểu cho tin nhắn riêng tư */
+            background-color: #fffacd; /* Màu vàng nhạt */
+            border: 1px dashed #daa520; /* Viền nét đứt */
+        }
         .username {
             font-weight: 700;
             color: #007bff;
@@ -155,21 +184,27 @@
             gap: 10px;
             background-color: #fff;
             border-top: 1px solid #eee;
+            flex-direction: column; /* Đặt dropdown/select lên trên input */
         }
-        #message-input-area input {
+        .message-input-controls {
+            display: flex;
+            gap: 10px;
+            width: 100%;
+        }
+        .message-input-controls input {
+            flex-grow: 1;
             padding: 12px 15px;
             border: 1px solid #ddd;
             border-radius: 25px;
             font-size: 1em;
             outline: none;
             transition: border-color 0.3s ease, box-shadow 0.3s ease;
-            flex-grow: 1; /* Input tin nhắn chiếm hết không gian */
         }
-        #message-input-area input:focus {
+        .message-input-controls input:focus {
             border-color: #007bff;
             box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
         }
-        button {
+        .message-input-controls button {
             padding: 12px 25px;
             background-color: #28a745;
             color: white;
@@ -177,13 +212,14 @@
             border-radius: 25px;
             font-size: 1em;
             font-weight: 700;
+            cursor: pointer;
             transition: background-color 0.3s ease, transform 0.2s ease;
         }
-        button:hover {
+        .message-input-controls button:hover {
             background-color: #218838;
             transform: translateY(-1px);
         }
-        button:active {
+        .message-input-controls button:active {
             transform: translateY(0);
         }
         .flash-message {
@@ -235,7 +271,10 @@
                 flex-direction: column;
                 padding: 10px;
             }
-            button, #message-input-area input {
+            .message-input-controls {
+                flex-direction: column;
+            }
+            .message-input-controls button, .message-input-controls input {
                 width: 100%;
             }
         }
@@ -267,8 +306,16 @@
             
             <div id="chat-container"></div>
             <div id="message-input-area">
-                <input type="text" id="message-input" placeholder="Nhập tin nhắn..." autofocus>
-                <button onclick="sendMessage()">Gửi</button>
+                <div class="recipient-select-area">
+                    <label for="recipient-select">Gửi đến:</label>
+                    <select id="recipient-select">
+                        <option value="all">Tất cả mọi người</option>
+                        </select>
+                </div>
+                <div class="message-input-controls">
+                    <input type="text" id="message-input" placeholder="Nhập tin nhắn..." autofocus>
+                    <button onclick="sendMessage()">Gửi</button>
+                </div>
             </div>
         </div>
 
@@ -283,16 +330,52 @@
         var socket = io();
         var chatContainer = document.getElementById('chat-container');
         var messageInput = document.getElementById('message-input');
-        var onlineUsersList = document.getElementById('online-users-list'); // Lấy phần tử danh sách người dùng
+        var onlineUsersList = document.getElementById('online-users-list');
+        var recipientSelect = document.getElementById('recipient-select'); // Lấy phần tử select
+
+        // Hàm để cập nhật danh sách người dùng trực tuyến và dropdown người nhận
+        function updateOnlineUsersDisplay(userList) {
+            onlineUsersList.innerHTML = ''; // Xóa danh sách cũ trong sidebar
+            // Xóa tất cả các option trừ "Tất cả mọi người"
+            var currentRecipient = recipientSelect.value; // Giữ lại lựa chọn hiện tại
+            recipientSelect.innerHTML = '<option value="all">Tất cả mọi người</option>'; 
+            
+            var loggedInUsername = "{{ current_user.username if current_user.is_authenticated else '' }}";
+
+            userList.forEach(function(username){
+                // Thêm vào sidebar
+                var listItem = document.createElement('li');
+                listItem.textContent = username;
+                listItem.dataset.username = username; // Lưu username vào data-attribute
+                listItem.onclick = function() {
+                    recipientSelect.value = username; // Chọn người nhận trong dropdown khi click sidebar
+                    // Xóa class 'selected' khỏi tất cả và thêm vào item được click
+                    Array.from(onlineUsersList.children).forEach(item => item.classList.remove('selected'));
+                    listItem.classList.add('selected');
+                };
+                if (username !== loggedInUsername) { // Không thêm tên của chính mình vào sidebar (đã có ở user-info)
+                    onlineUsersList.appendChild(listItem);
+                }
+
+                // Thêm vào dropdown người nhận
+                if (username !== loggedInUsername) { // Không cho phép gửi tin nhắn riêng tư cho chính mình
+                    var option = document.createElement('option');
+                    option.value = username;
+                    option.textContent = username;
+                    recipientSelect.appendChild(option);
+                }
+            });
+            // Khôi phục lựa chọn trước đó nếu vẫn còn trong danh sách
+            if (Array.from(recipientSelect.options).some(opt => opt.value === currentRecipient)) {
+                recipientSelect.value = currentRecipient;
+            } else {
+                recipientSelect.value = 'all'; // Nếu người nhận không còn, chọn lại "Tất cả mọi người"
+            }
+        }
 
         // Lắng nghe sự kiện 'update_user_list' từ server
         socket.on('update_user_list', function(userList){
-            onlineUsersList.innerHTML = ''; // Xóa danh sách cũ
-            userList.forEach(function(username){
-                var listItem = document.createElement('li');
-                listItem.textContent = username;
-                onlineUsersList.appendChild(listItem);
-            });
+            updateOnlineUsersDisplay(userList);
         });
 
         socket.on('message', function(data){
@@ -300,10 +383,15 @@
             messageRow.classList.add('message-row');
 
             var loggedInUsername = "{{ current_user.username if current_user.is_authenticated else '' }}";
+            
+            // Xử lý class 'sent', 'received', 'private'
             if (data.username === loggedInUsername) {
                 messageRow.classList.add('sent');
             } else {
                 messageRow.classList.add('received');
+            }
+            if (data.private) { // Nếu là tin nhắn riêng tư
+                messageRow.classList.add('private');
             }
 
             var usernameSpan = document.createElement('span');
@@ -325,7 +413,9 @@
             var message = messageInput.value.trim();
             if (message === "") return;
 
-            socket.emit('message', { message: message });
+            var recipient = recipientSelect.value; // Lấy người nhận từ dropdown
+
+            socket.emit('message', { message: message, recipient: recipient }); // Gửi cả tin nhắn và người nhận
             messageInput.value = "";
         }
 
