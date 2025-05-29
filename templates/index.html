@@ -4,36 +4,123 @@
     <meta charset="UTF-8">
     <title>Real-time Chat</title>
     <script src="https://cdn.socket.io/socket.io-3.0.3.min.js"></script>
+    <style>
+        body { font-family: sans-serif; margin: 20px; }
+        #chat-container {
+            display: flex;
+            flex-direction: column;
+            height: 400px; /* Increased height */
+            border: 1px solid #ccc;
+            overflow-y: auto; /* Changed to auto for scrollbar only when needed */
+            margin-bottom: 10px;
+            padding: 10px;
+            background-color: #f9f9f9;
+        }
+        .message-row {
+            margin-bottom: 8px;
+        }
+        .username {
+            font-weight: bold;
+            color: #337ab7; /* A nice blue for usernames */
+            margin-right: 5px;
+        }
+        .message-content {
+            word-wrap: break-word; /* Ensures long words wrap */
+        }
+        #message-input-area {
+            display: flex;
+            gap: 10px;
+        }
+        #username-input, #message-input {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        #username-input {
+            flex-shrink: 0; /* Don't allow it to shrink */
+            width: 150px; /* Fixed width for username input */
+        }
+        #message-input {
+            flex-grow: 1; /* Allows message input to take remaining space */
+        }
+        button {
+            padding: 8px 15px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+    </style>
 </head>
 <body>
     <h2>Real-time Chat!</h2>
-    <input type="text" id="username" placeholder="Nhập tên của bạn...">
-    <div id="chat" style="height:300px; border:1px solid #ccc; overflow:auto; margin-bottom: 10px;"></div>
-    <input type="text" id="message" placeholder="Nhập tin nhắn..." autofocus>
-    <button onclick="sendMessage()">Gửi</button>
+    <input type="text" id="username-input" placeholder="Enter your name...">
+    <div id="chat-container"></div>
+    <div id="message-input-area">
+        <input type="text" id="message-input" placeholder="Type your message..." autofocus>
+        <button onclick="sendMessage()">Send</button>
+    </div>
+
     <script>
         var socket = io();
-        var chat = document.getElementById('chat');
-        var usernameInput = document.getElementById('username');
-        var messageInput = document.getElementById('message');
+        var chatContainer = document.getElementById('chat-container');
+        var usernameInput = document.getElementById('username-input');
+        var messageInput = document.getElementById('message-input');
 
-        socket.on('message', function(msg){
-            var item = document.createElement('div');
-            item.textContent = msg;
-            chat.appendChild(item);
-            chat.scrollTop = chat.scrollHeight;
+        // Restore username from local storage if available
+        document.addEventListener('DOMContentLoaded', function() {
+            const storedUsername = localStorage.getItem('chatUsername');
+            if (storedUsername) {
+                usernameInput.value = storedUsername;
+            }
+        });
+
+        socket.on('message', function(data){
+            // Store username in local storage
+            localStorage.setItem('chatUsername', usernameInput.value);
+
+            var messageRow = document.createElement('div');
+            messageRow.classList.add('message-row');
+
+            var usernameSpan = document.createElement('span');
+            usernameSpan.classList.add('username');
+            usernameSpan.textContent = data.username + ": ";
+
+            var messageContentSpan = document.createElement('span');
+            messageContentSpan.classList.add('message-content');
+            messageContentSpan.textContent = data.message;
+
+            messageRow.appendChild(usernameSpan);
+            messageRow.appendChild(messageContentSpan);
+
+            chatContainer.appendChild(messageRow);
+            chatContainer.scrollTop = chatContainer.scrollHeight; // Scroll to bottom
         });
 
         function sendMessage(){
-            var username = usernameInput.value || "Ẩn danh";
-            var message = messageInput.value;
-            if(message.trim() === "") return;
-            socket.send(username + ": " + message);
-            messageInput.value = "";
+            var username = usernameInput.value.trim();
+            var message = messageInput.value.trim();
+
+            if (message === "") return; // Don't send empty messages
+
+            // If username is empty, set a default
+            if (username === "") {
+                username = "Anonymous";
+                usernameInput.value = username; // Update the input field as well
+            }
+
+            socket.emit('message', { username: username, message: message }); // Emit an object
+            messageInput.value = ""; // Clear message input
         }
 
         messageInput.addEventListener("keypress", function(e) {
-            if (e.key === "Enter") sendMessage();
+            if (e.key === "Enter") {
+                sendMessage();
+            }
         });
     </script>
 </body>
