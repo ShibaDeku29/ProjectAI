@@ -1,7 +1,10 @@
+# requirements.txt
 Flask==3.0.3
 Flask-SocketIO==5.3.6
 eventlet==0.35.1
-Flask-SQLAlchemy==3.1.1  # Thư viện ORM cho Flask
-psycopg2-binary==2.9.9   # Driver kết nối PostgreSQL
-Flask-Migrate==4.0.5     # Quản lý thay đổi database schema
-gunicorn==22.0.0         # WSGI HTTP Server cho Production
+Flask-SQLAlchemy==3.1.1
+psycopg2-binary==2.9.9
+Flask-Migrate==4.0.5
+gunicorn==22.0.0
+Flask-Login==0.6.3 # Thêm dòng này
+Werkzeug==3.0.3     # Thêm dòng này (hoặc phiên bản tương thích)

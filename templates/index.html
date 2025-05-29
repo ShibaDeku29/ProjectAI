@@ -42,6 +42,32 @@
             font-size: 1.8em;
             background-color: #e0f2f7;
         }
+        .user-info {
+            background-color: #f0f8ff;
+            padding: 10px 20px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.95em;
+            color: #333;
+        }
+        .user-info span {
+            font-weight: bold;
+            color: #007bff;
+        }
+        .user-info a {
+            color: #dc3545;
+            text-decoration: none;
+            padding: 5px 10px;
+            border: 1px solid #dc3545;
+            border-radius: 5px;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+        .user-info a:hover {
+            background-color: #dc3545;
+            color: white;
+        }
         #chat-container {
             flex-grow: 1;
             height: 400px;
@@ -86,24 +112,18 @@
             background-color: #fff;
             border-top: 1px solid #eee;
         }
-        #username-input, #message-input {
+        #message-input-area input {
             padding: 12px 15px;
             border: 1px solid #ddd;
             border-radius: 25px;
             font-size: 1em;
             outline: none;
             transition: border-color 0.3s ease, box-shadow 0.3s ease;
+            flex-grow: 1; /* Input tin nhắn chiếm hết không gian */
         }
-        #username-input:focus, #message-input:focus {
+        #message-input-area input:focus {
             border-color: #007bff;
             box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
-        }
-        #username-input {
-            flex-shrink: 0;
-            width: 160px;
-        }
-        #message-input {
-            flex-grow: 1;
         }
         button {
             padding: 12px 25px;
@@ -123,6 +143,28 @@
         button:active {
             transform: translateY(0);
         }
+        .flash-message {
+            padding: 10px;
+            margin-bottom: 15px;
+            border-radius: 5px;
+            font-weight: bold;
+            text-align: center;
+        }
+        .flash-message.success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .flash-message.danger {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .flash-message.info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
 
         /* Responsive Adjustments */
         @media (max-width: 600px) {
@@ -136,15 +178,11 @@
                 padding: 0;
                 align-items: stretch;
             }
-            #username-input {
-                width: 100%;
-                margin-bottom: 10px;
-            }
             #message-input-area {
                 flex-direction: column;
                 padding: 10px;
             }
-            button {
+            button, #message-input-area input {
                 width: 100%;
             }
         }
@@ -153,9 +191,28 @@
 <body>
     <div class="chat-wrapper">
         <h2>Trò chuyện Thời gian thực!</h2>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <ul class="flash-messages">
+                {% for category, message in messages %}
+                    <li class="flash-message {{ category }}">{{ message }}</li>
+                {% endfor %}
+                </ul>
+            {% endif %}
+        {% endwith %}
+
+        <div class="user-info">
+            {% if current_user.is_authenticated %}
+                <span>Chào mừng, {{ current_user.username }}!</span>
+                <a href="{{ url_for('logout') }}">Đăng xuất</a>
+            {% else %}
+                <span>Bạn chưa đăng nhập.</span>
+                <a href="{{ url_for('login') }}">Đăng nhập</a>
+            {% endif %}
+        </div>
+        
         <div id="chat-container"></div>
         <div id="message-input-area">
-            <input type="text" id="username-input" placeholder="Nhập tên của bạn...">
             <input type="text" id="message-input" placeholder="Nhập tin nhắn..." autofocus>
             <button onclick="sendMessage()">Gửi</button>
         </div>
@@ -164,26 +221,20 @@
     <script>
         var socket = io();
         var chatContainer = document.getElementById('chat-container');
-        var usernameInput = document.getElementById('username-input');
+        // var usernameInput = document.getElementById('username-input'); // Không cần usernameInput nữa
         var messageInput = document.getElementById('message-input');
 
-        // Khôi phục tên người dùng từ localStorage nếu có
-        document.addEventListener('DOMContentLoaded', function() {
-            const storedUsername = localStorage.getItem('chatUsername');
-            if (storedUsername) {
-                usernameInput.value = storedUsername;
-            }
-        });
+        // Không cần khôi phục username từ localStorage nữa vì đã dùng Flask-Login
 
         socket.on('message', function(data){
-            // Lưu tên người dùng vào localStorage mỗi khi có tin nhắn gửi đi
-            localStorage.setItem('chatUsername', usernameInput.value);
-
             var messageRow = document.createElement('div');
             messageRow.classList.add('message-row');
 
-            // Thêm class 'sent' hoặc 'received' để tạo kiểu cho tin nhắn của mình và tin nhắn của người khác
-            if (data.username === (usernameInput.value.trim() || "Ẩn danh")) {
+            // Thêm class 'sent' hoặc 'received'
+            // So sánh với username được render trên trang (trong user-info)
+            // hoặc gửi username từ backend
+            var loggedInUsername = "{{ current_user.username if current_user.is_authenticated else '' }}";
+            if (data.username === loggedInUsername) {
                 messageRow.classList.add('sent');
             } else {
                 messageRow.classList.add('received');
@@ -197,37 +248,22 @@
             messageContentSpan.classList.add('message-content');
             messageContentSpan.textContent = data.message;
 
-            // Tùy chọn: hiển thị timestamp (nếu muốn)
-            // var timestampSpan = document.createElement('span');
-            // timestampSpan.classList.add('timestamp');
-            // timestampSpan.textContent = new Date(data.timestamp).toLocaleTimeString(); // Định dạng thời gian
-            // messageRow.appendChild(timestampSpan);
-
             messageRow.appendChild(usernameSpan);
             messageRow.appendChild(messageContentSpan);
 
             chatContainer.appendChild(messageRow);
-            chatContainer.scrollTop = chatContainer.scrollHeight; // Cuộn xuống cuối
+            chatContainer.scrollTop = chatContainer.scrollHeight;
         });
 
         function sendMessage(){
-            var username = usernameInput.value.trim();
             var message = messageInput.value.trim();
+            if (message === "") return;
 
-            if (message === "") return; // Không gửi tin nhắn rỗng
-
-            // Nếu tên người dùng rỗng, đặt mặc định là "Ẩn danh"
-            if (username === "") {
-                username = "Ẩn danh";
-                usernameInput.value = username; // Cập nhật lại trường nhập tên
-            }
-
-            // Phát sự kiện 'message' với đối tượng chứa tên người dùng và tin nhắn
-            socket.emit('message', { username: username, message: message });
-            messageInput.value = ""; // Xóa nội dung ô tin nhắn sau khi gửi
+            // Không gửi username từ frontend nữa, backend sẽ lấy từ current_user
+            socket.emit('message', { message: message });
+            messageInput.value = "";
         }
 
-        // Gửi tin nhắn khi nhấn Enter trong ô tin nhắn
         messageInput.addEventListener("keypress", function(e) {
             if (e.key === "Enter") {
                 sendMessage();
