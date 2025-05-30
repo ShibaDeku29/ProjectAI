@@ -15,37 +15,39 @@
         }
         body {
             font-family: 'Roboto', Arial, sans-serif;
-            margin: 0;
             background-color: #f0f2f5;
             color: #333;
             display: flex;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
+            overflow: hidden; /* Prevent body scrolling */
         }
-        .main-container { /* Thêm một container chính để chứa cả chat và sidebar */
+        .main-container {
             display: flex;
             background-color: #ffffff;
             border-radius: 12px;
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
             width: 90%;
-            max-width: 1000px; /* Tăng chiều rộng tối đa */
+            max-width: 1000px;
             overflow: hidden;
+            animation: slideIn 0.5s ease-out; /* Animation for container */
         }
         .chat-wrapper {
             flex-grow: 1;
             display: flex;
             flex-direction: column;
-            border-right: 1px solid #eee; /* Đường kẻ phân cách với sidebar */
-            min-width: 500px; /* Chiều rộng tối thiểu cho khung chat */
+            border-right: 1px solid #eee;
+            min-width: 500px;
         }
         .online-users-sidebar {
-            width: 250px; /* Chiều rộng sidebar */
+            width: 250px;
             background-color: #f8fcfd;
             padding: 20px;
             display: flex;
             flex-direction: column;
             border-left: 1px solid #eee;
+            transition: transform 0.3s ease; /* Smooth sidebar animation */
         }
         .online-users-sidebar h3 {
             color: #2c3e50;
@@ -61,6 +63,7 @@
             margin: 0;
             flex-grow: 1;
             overflow-y: auto;
+            scroll-behavior: smooth; /* Smooth scrolling for user list */
         }
         #online-users-list li {
             padding: 8px 0;
@@ -68,18 +71,22 @@
             font-weight: bold;
             display: flex;
             align-items: center;
-            cursor: pointer; /* Thêm con trỏ để có thể click chọn */
-            transition: background-color 0.2s ease;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            opacity: 0; /* For fade-in animation */
+            animation: fadeIn 0.5s forwards; /* Fade-in for user items */
         }
         #online-users-list li:hover {
-            background-color: #e6f7ff; /* Màu nền khi hover */
+            background-color: #e6f7ff;
+            transform: translateX(5px); /* Subtle slide on hover */
         }
         #online-users-list li.selected {
-            background-color: #cceeff; /* Màu nền khi được chọn */
+            background-color: #cceeff;
+            transform: translateX(5px);
         }
         #online-users-list li::before {
-            content: '•'; /* Dấu chấm tròn */
-            color: #28a745; /* Màu xanh lá cho dấu chấm */
+            content: '•';
+            color: #28a745;
             font-size: 1.5em;
             line-height: 0;
             margin-right: 8px;
@@ -87,6 +94,7 @@
         .recipient-select-area {
             margin-bottom: 10px;
             text-align: left;
+            transition: opacity 0.3s ease;
         }
         .recipient-select-area label {
             display: block;
@@ -100,8 +108,12 @@
             border: 1px solid #ddd;
             border-radius: 5px;
             font-size: 0.9em;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
         }
-
+        .recipient-select-area select:focus {
+            border-color: #007bff;
+            box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
+        }
         h2 {
             color: #2c3e50;
             text-align: center;
@@ -110,6 +122,7 @@
             margin-bottom: 0;
             font-size: 1.8em;
             background-color: #e0f2f7;
+            animation: fadeInDown 0.5s ease; /* Header animation */
         }
         .user-info {
             background-color: #f0f8ff;
@@ -120,6 +133,7 @@
             align-items: center;
             font-size: 0.95em;
             color: #333;
+            transition: background-color 0.3s ease;
         }
         .user-info span {
             font-weight: bold;
@@ -131,11 +145,12 @@
             padding: 5px 10px;
             border: 1px solid #dc3545;
             border-radius: 5px;
-            transition: background-color 0.3s ease, color 0.3s ease;
+            transition: background-color 0.3s ease, color 0.3s ease, transform 0.2s ease;
         }
         .user-info a:hover {
             background-color: #dc3545;
             color: white;
+            transform: scale(1.05); /* Subtle scale on hover */
         }
         #chat-container {
             flex-grow: 1;
@@ -144,6 +159,7 @@
             padding: 20px;
             border-bottom: 1px solid #eee;
             background-color: #f9f9f9;
+            scroll-behavior: smooth; /* Smooth scrolling for chat */
         }
         .message-row {
             margin-bottom: 12px;
@@ -153,6 +169,8 @@
             word-wrap: break-word;
             line-height: 1.4;
             box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+            opacity: 0; /* For fade-in animation */
+            animation: slideInMessage 0.3s ease forwards; /* Message animation */
         }
         .message-row.sent {
             background-color: #dcf8c6;
@@ -164,9 +182,9 @@
             align-self: flex-start;
             margin-right: auto;
         }
-        .message-row.private { /* Định kiểu cho tin nhắn riêng tư */
-            background-color: #fffacd; /* Màu vàng nhạt */
-            border: 1px dashed #daa520; /* Viền nét đứt */
+        .message-row.private {
+            background-color: #fffacd;
+            border: 1px dashed #daa520;
         }
         .username {
             font-weight: 700;
@@ -177,14 +195,14 @@
         .message-content {
             color: #333;
         }
-
         #message-input-area {
             display: flex;
             padding: 15px;
             gap: 10px;
             background-color: #fff;
             border-top: 1px solid #eee;
-            flex-direction: column; /* Đặt dropdown/select lên trên input */
+            flex-direction: column;
+            transition: transform 0.3s ease;
         }
         .message-input-controls {
             display: flex;
@@ -198,11 +216,12 @@
             border-radius: 25px;
             font-size: 1em;
             outline: none;
-            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease, transform 0.2s ease;
         }
         .message-input-controls input:focus {
             border-color: #007bff;
             box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
+            transform: scale(1.02); /* Subtle scale on focus */
         }
         .message-input-controls button {
             padding: 12px 25px;
@@ -213,14 +232,16 @@
             font-size: 1em;
             font-weight: 700;
             cursor: pointer;
-            transition: background-color 0.3s ease, transform 0.2s ease;
+            transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
         }
         .message-input-controls button:hover {
             background-color: #218838;
-            transform: translateY(-1px);
+            transform: translateY(-2px);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
         }
         .message-input-controls button:active {
             transform: translateY(0);
+            box-shadow: none;
         }
         .flash-message {
             padding: 10px;
@@ -228,6 +249,8 @@
             border-radius: 5px;
             font-weight: bold;
             text-align: center;
+            opacity: 0;
+            animation: fadeIn 0.5s ease forwards;
         }
         .flash-message.success {
             background-color: #d4edda;
@@ -245,10 +268,28 @@
             border: 1px solid #bee5eb;
         }
 
+        /* Keyframe Animations */
+        @keyframes slideIn {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @keyframes fadeInDown {
+            from { transform: translateY(-20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        @keyframes slideInMessage {
+            from { transform: translateX(-20px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
         /* Responsive Adjustments */
-        @media (max-width: 768px) { /* Điều chỉnh breakpoint cho responsive */
+        @media (max-width: 768px) {
             .main-container {
-                flex-direction: column; /* Xếp chồng chat và sidebar trên màn hình nhỏ */
+                flex-direction: column;
                 width: 100%;
                 height: 100vh;
                 border-radius: 0;
@@ -262,10 +303,11 @@
             }
             .online-users-sidebar {
                 width: 100%;
-                height: 150px; /* Chiều cao cố định cho sidebar trên mobile */
+                height: 150px;
                 border-left: none;
                 border-top: 1px solid #eee;
-                order: -1; /* Đặt sidebar lên trên chat */
+                order: -1;
+                transform: translateY(0); /* Reset sidebar animation */
             }
             #message-input-area {
                 flex-direction: column;
@@ -310,7 +352,7 @@
                     <label for="recipient-select">Gửi đến:</label>
                     <select id="recipient-select">
                         <option value="all">Tất cả mọi người</option>
-                        </select>
+                    </select>
                 </div>
                 <div class="message-input-controls">
                     <input type="text" id="message-input" placeholder="Nhập tin nhắn..." autofocus>
@@ -321,8 +363,7 @@
 
         <div class="online-users-sidebar">
             <h3>Người dùng trực tuyến</h3>
-            <ul id="online-users-list">
-                </ul>
+            <ul id="online-users-list"></ul>
         </div>
     </div>
 
@@ -331,66 +372,63 @@
         var chatContainer = document.getElementById('chat-container');
         var messageInput = document.getElementById('message-input');
         var onlineUsersList = document.getElementById('online-users-list');
-        var recipientSelect = document.getElementById('recipient-select'); // Lấy phần tử select
+        var recipientSelect = document.getElementById('recipient-select');
 
         // Hàm để cập nhật danh sách người dùng trực tuyến và dropdown người nhận
         function updateOnlineUsersDisplay(userList) {
-            onlineUsersList.innerHTML = ''; // Xóa danh sách cũ trong sidebar
-            // Xóa tất cả các option trừ "Tất cả mọi người"
-            var currentRecipient = recipientSelect.value; // Giữ lại lựa chọn hiện tại
-            recipientSelect.innerHTML = '<option value="all">Tất cả mọi người</option>'; 
+            onlineUsersList.innerHTML = ''; // Xóa danh sách cũ
+            var currentRecipient = recipientSelect.value;
+            recipientSelect.innerHTML = '<option value="all">Tất cả mọi người</option>';
             
             var loggedInUsername = "{{ current_user.username if current_user.is_authenticated else '' }}";
 
-            userList.forEach(function(username){
+            userList.forEach(function(username, index) {
                 // Thêm vào sidebar
                 var listItem = document.createElement('li');
                 listItem.textContent = username;
-                listItem.dataset.username = username; // Lưu username vào data-attribute
+                listItem.dataset.username = username;
+                listItem.style.animationDelay = `${index * 0.1}s`; // Staggered animation
                 listItem.onclick = function() {
-                    recipientSelect.value = username; // Chọn người nhận trong dropdown khi click sidebar
-                    // Xóa class 'selected' khỏi tất cả và thêm vào item được click
+                    recipientSelect.value = username;
                     Array.from(onlineUsersList.children).forEach(item => item.classList.remove('selected'));
                     listItem.classList.add('selected');
                 };
-                if (username !== loggedInUsername) { // Không thêm tên của chính mình vào sidebar (đã có ở user-info)
+                if (username !== loggedInUsername) {
                     onlineUsersList.appendChild(listItem);
                 }
 
                 // Thêm vào dropdown người nhận
-                if (username !== loggedInUsername) { // Không cho phép gửi tin nhắn riêng tư cho chính mình
+                if (username !== loggedInUsername) {
                     var option = document.createElement('option');
                     option.value = username;
                     option.textContent = username;
                     recipientSelect.appendChild(option);
                 }
             });
-            // Khôi phục lựa chọn trước đó nếu vẫn còn trong danh sách
             if (Array.from(recipientSelect.options).some(opt => opt.value === currentRecipient)) {
                 recipientSelect.value = currentRecipient;
             } else {
-                recipientSelect.value = 'all'; // Nếu người nhận không còn, chọn lại "Tất cả mọi người"
+                recipientSelect.value = 'all';
             }
         }
 
         // Lắng nghe sự kiện 'update_user_list' từ server
-        socket.on('update_user_list', function(userList){
+        socket.on('update_user_list', function(userList) {
             updateOnlineUsersDisplay(userList);
         });
 
-        socket.on('message', function(data){
+        socket.on('message', function(data) {
             var messageRow = document.createElement('div');
             messageRow.classList.add('message-row');
 
             var loggedInUsername = "{{ current_user.username if current_user.is_authenticated else '' }}";
             
-            // Xử lý class 'sent', 'received', 'private'
             if (data.username === loggedInUsername) {
                 messageRow.classList.add('sent');
             } else {
                 messageRow.classList.add('received');
             }
-            if (data.private) { // Nếu là tin nhắn riêng tư
+            if (data.private) {
                 messageRow.classList.add('private');
             }
 
@@ -406,17 +444,23 @@
             messageRow.appendChild(messageContentSpan);
 
             chatContainer.appendChild(messageRow);
-            chatContainer.scrollTop = chatContainer.scrollHeight;
+            // Smooth scroll to bottom with slight delay for animation
+            setTimeout(() => {
+                chatContainer.scrollTo({
+                    top: chatContainer.scrollHeight,
+                    behavior: 'smooth'
+                });
+            }, 100);
         });
 
-        function sendMessage(){
+        function sendMessage() {
             var message = messageInput.value.trim();
             if (message === "") return;
 
-            var recipient = recipientSelect.value; // Lấy người nhận từ dropdown
-
-            socket.emit('message', { message: message, recipient: recipient }); // Gửi cả tin nhắn và người nhận
+            var recipient = recipientSelect.value;
+            socket.emit('message', { message: message, recipient: recipient });
             messageInput.value = "";
+            messageInput.focus(); // Keep focus on input after sending
         }
 
         messageInput.addEventListener("keypress", function(e) {
