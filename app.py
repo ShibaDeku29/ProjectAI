@@ -1,5 +1,5 @@
 import os
-from flask import Flask, render_template, request, redirect, url_for, flash
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
 from flask_socketio import SocketIO
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
@@ -46,10 +46,8 @@ class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False, index=True)
     password_hash = db.Column(db.String(256), nullable=False)
-    
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     avatar_url = db.Column(db.String(256), nullable=True, default='https://placehold.co/120x120/007bff/ffffff?text=User')
-    
     email = db.Column(db.String(120), unique=True, nullable=True, index=True)
     full_name = db.Column(db.String(120), nullable=True)
     bio = db.Column(db.Text, nullable=True)
@@ -198,7 +196,6 @@ def register():
             except Exception as e:
                 db.session.rollback()
                 flash(f'Đã xảy ra lỗi khi đăng ký: {e}', 'danger')
-                
     return render_template('register.html')
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -239,10 +236,145 @@ def dashboard():
     public_message_count = Message.query.filter_by(username=current_user.username, is_private=False).count()
     recent_activities = UserActivity.query.filter_by(user_id=current_user.id).order_by(UserActivity.timestamp.desc()).limit(5).all()
     unread_notifications_count = Notification.query.filter_by(user_id=current_user.id, is_read=False).count()
+    friend_requests = Friendship.query.filter_by(user_b_id=current_user.id, status='pending_a_to_b').count()
     return render_template('dashboard.html',
                            public_message_count=public_message_count,
                            recent_activities=recent_activities,
-                           unread_notifications_count=unread_notifications_count)
+                           unread_notifications_count=unread_notifications_count,
+                           friend_requests=friend_requests)
+
+@app.route('/profile/edit', methods=['GET', 'POST'])
+@login_required
+def edit_profile():
+    if request.method == 'POST':
+        full_name = request.form.get('full_name', '').strip()
+        email = request.form.get('email', '').strip()
+        bio = request.form.get('bio', '').strip()
+        avatar_url = request.form.get('avatar_url', '').strip()
+
+        if email and User.query.filter_by(email=email).first() and email != current_user.email:
+            flash('Email này đã được sử dụng!', 'danger')
+            return render_template('edit_profile.html', full_name=full_name, email=email, bio=bio, avatar_url=avatar_url)
+
+        current_user.full_name = full_name if full_name else None
+        current_user.email = email if email else None
+        current_user.bio = bio if bio else None
+        current_user.avatar_url = avatar_url if avatar_url else current_user.avatar_url
+
+        try:
+            db.session.commit()
+            activity = UserActivity(user_id=current_user.id, activity_type='updated_profile', description=f'User {current_user.username} updated their profile.')
+            db.session.add(activity)
+            db.session.commit()
+            flash('Cập nhật hồ sơ thành công!', 'success')
+            return redirect(url_for('dashboard'))
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Lỗi khi cập nhật hồ sơ: {e}', 'danger')
+    return render_template('edit_profile.html', full_name=current_user.full_name, email=current_user.email, bio=current_user.bio, avatar_url=current_user.avatar_url)
+
+@app.route('/notifications')
+@login_required
+def notifications():
+    notifications = Notification.query.filter_by(user_id=current_user.id).order_by(Notification.timestamp.desc()).all()
+    return render_template('notifications.html', notifications=notifications)
+
+@app.route('/notifications/mark_read/<int:notification_id>', methods=['POST'])
+@login_required
+def mark_notification_read(notification_id):
+    notification = Notification.query.get_or_404(notification_id)
+    if notification.user_id != current_user.id:
+        return jsonify({'error': 'Unauthorized'}), 403
+    notification.is_read = True
+    db.session.commit()
+    return jsonify({'success': True})
+
+@app.route('/friends')
+@login_required
+def friends():
+    friend_requests = Friendship.query.filter_by(user_b_id=current_user.id, status='pending_a_to_b').all()
+    friends = Friendship.query.filter(
+        ((Friendship.user_a_id == current_user.id) | (Friendship.user_b_id == current_user.id)) & 
+        (Friendship.status == 'friends')
+    ).all()
+    return render_template('friends.html', friend_requests=friend_requests, friends=friends)
+
+@app.route('/friends/request/<string:username>', methods=['POST'])
+@login_required
+def send_friend_request(username):
+    target_user = User.query.filter_by(username=username).first()
+    if not target_user:
+        flash('Người dùng không tồn tại!', 'danger')
+        return redirect(url_for('friends'))
+    if target_user.id == current_user.id:
+        flash('Không thể gửi lời mời kết bạn cho chính mình!', 'danger')
+        return redirect(url_for('friends'))
+    
+    existing_friendship = Friendship.query.filter_by(user_a_id=current_user.id, user_b_id=target_user.id).first()
+    if existing_friendship:
+        flash('Lời mời kết bạn đã tồn tại hoặc đã là bạn!', 'info')
+        return redirect(url_for('friends'))
+
+    friendship = Friendship(user_a_id=current_user.id, user_b_id=target_user.id, status='pending_a_to_b')
+    notification = Notification(
+        user_id=target_user.id,
+        name='friend_request_received',
+        payload_json=f'{{"from_username": "{current_user.username}"}}'
+    )
+    db.session.add(friendship)
+    db.session.add(notification)
+    try:
+        db.session.commit()
+        flash('Gửi lời mời kết bạn thành công!', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Lỗi khi gửi lời mời: {e}', 'danger')
+    return redirect(url_for('friends'))
+
+@app.route('/friends/accept/<int:user_id>', methods=['POST'])
+@login_required
+def accept_friend_request(user_id):
+    friendship = Friendship.query.filter_by(user_a_id=user_id, user_b_id=current_user.id, status='pending_a_to_b').first()
+    if not friendship:
+        flash('Lời mời kết bạn không tồn tại!', 'danger')
+        return redirect(url_for('friends'))
+    
+    friendship.status = 'friends'
+    friendship.accepted_at = datetime.utcnow()
+    notification = Notification(
+        user_id=user_id,
+        name='friend_request_accepted',
+        payload_json=f'{{"from_username": "{current_user.username}"}}'
+    )
+    db.session.add(notification)
+    try:
+        db.session.commit()
+        flash('Đã chấp nhận lời mời kết bạn!', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Lỗi khi chấp nhận lời mời: {e}', 'danger')
+    return redirect(url_for('friends'))
+
+@app.route('/settings', methods=['GET', 'POST'])
+@login_required
+def settings():
+    if request.method == 'POST':
+        new_password = request.form.get('new_password')
+        if new_password:
+            current_user.set_password(new_password)
+            try:
+                db.session.commit()
+                flash('Đổi mật khẩu thành công!', 'success')
+                return redirect(url_for('settings'))
+            except Exception as e:
+                db.session.rollback()
+                flash(f'Lỗi khi đổi mật khẩu: {e}', 'danger')
+    return render_template('settings.html')
+
+@app.route('/security')
+@login_required
+def security():
+    return render_template('security.html')
 
 # --- End Routes ---
 

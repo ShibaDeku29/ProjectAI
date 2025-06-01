@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bạn bè</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Roboto', Arial, sans-serif;
+            background-color: #f0f2f5;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        h2 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+        }
+        .friend-request, .friend {
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+        }
+        .friend-request form, .friend form {
+            display: inline-block;
+        }
+        .friend-request button, .friend button {
+            background-color: #28a745;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-left: 10px;
+        }
+        .friend-request button:hover, .friend button:hover {
+            background-color: #218838;
+        }
+        .search-form {
+            margin-bottom: 20px;
+        }
+        .search-form input {
+            padding: 10px;
+            width: 70%;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .search-form button {
+            padding: 10px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .search-form button:hover {
+            background-color: #0056b3;
+        }
+        .links {
+            margin-top: 20px;
+            text-align: center;
+        }
+        .links a {
+            color: #007bff;
+            text-decoration: none;
+        }
+        .links a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Bạn bè</h2>
+        <form class="search-form" method="POST" action="{{ url_for('send_friend_request', username='') }}">
+            <input type="text" name="username" placeholder="Tìm kiếm người dùng..." required>
+            <button type="submit">Gửi lời mời</button>
+        </form>
+        <h3>Lời mời kết bạn</h3>
+        {% if friend_requests %}
+            {% for request in friend_requests %}
+                <div class="friend-request">
+                    <span>Từ: {{ request.user_a.username }}</span>
+                    <form method="POST" action="{{ url_for('accept_friend_request', user_id=request.user_a_id) }}">
+                        <button type="submit">Chấp nhận</button>
+                    </form>
+                </div>
+            {% endfor %}
+        {% else %}
+            <p>Không có lời mời kết bạn nào.</p>
+        {% endif %}
+        <h3>Bạn bè</h3>
+        {% if friends %}
+            {% for friend in friends %}
+                <div class="friend">
+                    <span>{{ friend.user_a.username if friend.user_b_id == current_user.id else friend.user_b.username }}</span>
+                </div>
+            {% endfor %}
+        {% else %}
+            <p

@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thông báo</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Roboto', Arial, sans-serif;
+            background-color: #f0f2f5;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        h2 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+        }
+        .notification {
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .notification.unread {
+            background-color: #e7f3fe;
+        }
+        .notification button {
+            background-color: #28a745;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .notification button:hover {
+            background-color: #218838;
+        }
+        .links {
+            margin-top: 20px;
+            text-align: center;
+        }
+        .links a {
+            color: #007bff;
+            text-decoration: none;
+        }
+        .links a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Thông báo</h2>
+        {% if notifications %}
+            {% for notification in notifications %}
+                <div class="notification {{ 'unread' if not notification.is_read }}">
+                    <span>{{ notification.name }}: {{ notification.get_payload() or '' }}</span>
+                    {% if not notification.is_read %}
+                        <button onclick="markRead({{ notification.id }})">Đánh dấu đã đọc</button>
+                    {% endif %}
+                </div>
+            {% endfor %}
+        {% else %}
+            <p>Không có thông báo nào.</p>
+        {% endif %}
+        <div class="links">
+            <a href="{{ url_for('dashboard') }}">Quay lại Dashboard</a>
+        </div>
+    </div>
+    <script>
+        function markRead(notificationId) {
+            fetch(`/notifications/mark_read/${notificationId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    window.location.reload();
+                } else {
+                    alert('Lỗi: ' + (data.error ? data.error : 'Không thể đánh dấu đã đọc'));
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Đã xảy ra lỗi khi kết nối đến server.');
+            });
+        }
+    </script>
+</body>
+</html>
