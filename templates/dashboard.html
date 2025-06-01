@@ -123,7 +123,7 @@
             box-shadow: var(--shadow-sm);
             height: fit-content;
             position: sticky;
-            top: calc(0.75rem * 2 + 1.5rem + 1.5rem + 1.5rem); /* Adjusted for navbar and top margin */
+            top: calc(0.75rem * 2 + 1.5rem + 1.5rem + 1.5rem);
         }
 
         .dashboard-sidebar .profile-card {
@@ -151,12 +151,12 @@
             font-size: 3.5rem;
             border: 4px solid var(--card-bg-color);
             box-shadow: var(--shadow-sm);
-            overflow: hidden; /* Để ảnh không bị tràn ra ngoài */
+            overflow: hidden;
         }
         .dashboard-sidebar .profile-card .avatar img {
             width: 100%;
             height: 100%;
-            object-fit: cover; /* Đảm bảo ảnh vừa vặn và không bị méo */
+            object-fit: cover;
         }
         .dashboard-sidebar .profile-card .avatar-upload-btn {
             position: absolute;
@@ -177,7 +177,7 @@
             transition: background-color 0.2s ease;
         }
         .dashboard-sidebar .profile-card .avatar-upload-btn:hover {
-            background-color: #1e7e34; 
+            background-color: #1e7e34;
         }
 
         .dashboard-sidebar .profile-card h3 {
@@ -197,8 +197,8 @@
             margin-bottom: 0.5rem;
             word-break: break-all;
         }
-         .dashboard-sidebar .profile-card .joined-date,
-         .dashboard-sidebar .profile-card .last-seen {
+        .dashboard-sidebar .profile-card .joined-date,
+        .dashboard-sidebar .profile-card .last-seen {
             font-size: 0.8rem;
             color: var(--text-muted-color);
             margin-top: 0.3rem;
@@ -208,10 +208,9 @@
             color: var(--text-muted-color);
             margin-top: 0.75rem;
             font-style: italic;
-            max-height: 60px; /* Giới hạn chiều cao bio */
-            overflow-y: auto; /* Cho phép cuộn nếu bio dài */
+            max-height: 60px;
+            overflow-y: auto;
         }
-
 
         .dashboard-sidebar .sidebar-nav ul {
             list-style: none;
@@ -236,22 +235,21 @@
             color: var(--text-muted-color);
             transition: color 0.2s ease;
         }
-         .dashboard-sidebar .sidebar-nav ul li a .badge {
+        .dashboard-sidebar .sidebar-nav ul li a .badge {
             margin-left: auto;
             font-size: 0.75em;
             padding: .25em .5em;
             border-radius: .25rem;
         }
 
-
         .dashboard-sidebar .sidebar-nav ul li a:hover {
             background-color: rgba(var(--primary-color-rgb, 0, 123, 255), 0.08);
             color: var(--primary-color);
             transform: translateX(2px);
         }
-         .dashboard-sidebar .sidebar-nav ul li a:hover i {
+        .dashboard-sidebar .sidebar-nav ul li a:hover i {
             color: var(--primary-color);
-         }
+        }
 
         .dashboard-sidebar .sidebar-nav ul li a.active {
             background-color: var(--sidebar-active-bg);
@@ -261,11 +259,10 @@
         .dashboard-sidebar .sidebar-nav ul li a.active i {
             color: var(--sidebar-active-color);
         }
-         .dashboard-sidebar .sidebar-nav ul li a.active .badge {
+        .dashboard-sidebar .sidebar-nav ul li a.active .badge {
             background-color: white;
             color: var(--sidebar-active-bg);
         }
-
 
         .dashboard-main-content {
             flex-grow: 1;
@@ -319,7 +316,7 @@
             margin-right: 1rem;
             line-height: 1;
         }
-         .widget .widget-header .widget-title h3 {
+        .widget .widget-header .widget-title h3 {
             color: var(--text-color);
             font-size: 1.05rem;
             margin: 0;
@@ -328,7 +325,7 @@
         .widget .widget-header .widget-title p {
             font-size: 0.8rem;
             color: var(--text-muted-color);
-            margin:0;
+            margin: 0;
         }
 
         .widget .widget-content {
@@ -341,24 +338,24 @@
             display: block;
             margin-bottom: 0.5rem;
         }
-         .widget .widget-content .stat-label {
+        .widget .widget-content .stat-label {
             font-size: 0.9rem;
             color: var(--text-muted-color);
             margin-bottom: 1rem;
-         }
+        }
         .widget .widget-content ul {
             list-style: none;
             padding-left: 0;
             font-size: 0.9rem;
         }
-         .widget .widget-content ul li {
+        .widget .widget-content ul li {
             margin-bottom: 0.3rem;
             color: var(--text-color);
-         }
-          .widget .widget-content ul li i {
+        }
+        .widget .widget-content ul li i {
             margin-right: 0.5rem;
             color: var(--secondary-color);
-          }
+        }
 
         .widget .widget-footer {
             margin-top: auto;
@@ -377,7 +374,7 @@
             color: #0056b3;
             text-decoration: underline;
         }
-         .widget .widget-footer a.btn-action {
+        .widget .widget-footer a.btn-action {
             display: inline-block;
             background-color: var(--primary-color);
             color: white;
@@ -388,9 +385,9 @@
             font-size: 0.85rem;
             font-weight: 500;
         }
-         .widget .widget-footer a.btn-action i {
+        .widget .widget-footer a.btn-action i {
             margin-right: 0.4rem;
-         }
+        }
         .widget .widget-footer a.btn-action:hover {
             background-color: #0056b3;
             transform: translateY(-1px);
@@ -408,10 +405,10 @@
             padding-bottom: 0;
         }
         .activity-feed .feed-item .feed-icon {
-            font-size: 0.9rem; /* Giảm kích thước icon một chút */
+            font-size: 0.9rem;
             color: var(--text-muted-color);
             margin-right: 0.75rem;
-            margin-top: 0.2rem; /* Căn chỉnh icon với dòng text đầu tiên */
+            margin-top: 0.2rem;
             width: 20px;
             text-align: center;
         }
@@ -429,7 +426,6 @@
             padding: 1rem 0;
             font-style: italic;
         }
-
 
         .dashboard-footer {
             text-align: center;
@@ -456,7 +452,7 @@
                 margin-bottom: 1.5rem;
                 position: static;
             }
-             .page-header { text-align: center; }
+            .page-header { text-align: center; }
         }
         @media (max-width: 768px) {
             .dashboard-navbar {
@@ -464,12 +460,10 @@
             }
             .dashboard-navbar .logo a { font-size: 1.25rem; }
             .dashboard-navbar .nav-links ul {
-                display: none; /* Ẩn menu chính, cần menu burger thay thế */
+                display: none;
             }
-             .dashboard-container { margin: 1rem auto; width: 90%;}
-             .welcome-banner { padding: 1.5rem; }
-             .welcome-banner h2 { font-size: 1.5rem; }
-             .widgets-grid { grid-template-columns: 1fr; }
+            .dashboard-container { margin: 1rem auto; width: 90%; }
+            .widgets-grid { grid-template-columns: 1fr; }
         }
 
         :root {
@@ -496,6 +490,10 @@
         .text-white { color: #fff !important; }
         .ms-auto { margin-left: auto !important; }
 
+        /* Hidden file input for avatar upload */
+        .avatar-upload-input {
+            display: none;
+        }
     </style>
 </head>
 <body data-theme="light">
@@ -530,6 +528,7 @@
                         {% endif %}
                     </div>
                     <button class="avatar-upload-btn" title="Thay đổi ảnh đại diện"><i class="fas fa-camera"></i></button>
+                    <input type="file" class="avatar-upload-input" id="avatar-upload" accept="image/*">
                 </div>
                 <h3>{{ current_user.username }}</h3>
                 {% if current_user.full_name %}
@@ -547,18 +546,19 @@
             <nav class="sidebar-nav">
                 <ul>
                     <li><a href="{{ url_for('dashboard') }}" class="active"><i class="fas fa-tachometer-alt"></i> Tổng quan</a></li>
-                    <li><a href="#"><i class="fas fa-user-edit"></i> Chỉnh sửa Hồ sơ</a></li>
-                    <li>
-                        <a href="#">
-                            <i class="fas fa-bell"></i> Thông báo
-                            {% if unread_notifications_count and unread_notifications_count > 0 %}
-                                <span class="badge bg-danger ms-auto">{{ unread_notifications_count }}</span>
-                            {% endif %}
-                        </a>
-                    </li>
-                    <li><a href="#"><i class="fas fa-users"></i> Bạn bè</a></li>
-                    <li><a href="#"><i class="fas fa-cog"></i> Cài đặt</a></li>
-                    <li><a href="#"><i class="fas fa-shield-alt"></i> Bảo mật</a></li>
+                    <li><a href="{{ url_for('edit_profile') }}"><i class="fas fa-user-edit"></i> Chỉnh sửa Hồ sơ</a></li>
+                    <li><a href="{{ url_for('notifications') }}"><i class="fas fa-bell"></i> Thông báo
+                        {% if unread_notifications_count and unread_notifications_count > 0 %}
+                            <span class="badge bg-danger ms-auto">{{ unread_notifications_count }}</span>
+                        {% endif %}
+                    </a></li>
+                    <li><a href="{{ url_for('friends') }}"><i class="fas fa-users"></i> Bạn bè
+                        {% if friend_requests and friend_requests > 0 %}
+                            <span class="badge bg-danger ms-auto">{{ friend_requests }}</span>
+                        {% endif %}
+                    </a></li>
+                    <li><a href="{{ url_for('settings') }}"><i class="fas fa-cog"></i> Cài đặt</a></li>
+                    <li><a href="{{ url_for('security') }}"><i class="fas fa-shield-alt"></i> Bảo mật</a></li>
                 </ul>
             </nav>
         </aside>
@@ -588,7 +588,7 @@
                 </div>
 
                 <div class="widget">
-                     <div class="widget-header">
+                    <div class="widget-header">
                         <span class="widget-icon" style="color: var(--secondary-color); background-color: rgba(40, 167, 69, 0.1);"><i class="fas fa-user-clock"></i></span>
                         <div class="widget-title">
                             <h3>Hoạt động Gần Đây</h3>
@@ -599,7 +599,7 @@
                         <span class="stat-number">{{ current_user.last_seen.strftime('%H:%M') if current_user.last_seen else 'N/A' }}</span>
                         <p class="stat-label">{{ current_user.last_seen.strftime('%A, %d/%m/%Y') if current_user.last_seen else 'Chưa có thông tin' }}</p>
                     </div>
-                     <div class="widget-footer">
+                    <div class="widget-footer">
                         <a href="#activity-feed-section" class="btn-view-all">Xem chi tiết hoạt động <i class="fas fa-arrow-right"></i></a>
                     </div>
                 </div>
@@ -617,7 +617,7 @@
                         <p class="stat-label">Số thông báo bạn chưa đọc.</p>
                     </div>
                     <div class="widget-footer">
-                        <a href="#" class="btn-action"><i class="fas fa-list-alt"></i> Xem Thông Báo</a>
+                        <a href="{{ url_for('notifications') }}" class="btn-action"><i class="fas fa-list-alt"></i> Xem Thông Báo</a>
                     </div>
                 </div>
 
@@ -630,17 +630,17 @@
                         </div>
                     </div>
                     <div class="widget-content">
-                        <span class="stat-number">0</span>
+                        <span class="stat-number">{{ friend_requests if friend_requests is defined else '0' }}</span>
                         <p class="stat-label">Lời mời đang chờ xử lý.</p>
                     </div>
-                     <div class="widget-footer">
-                        <a href="#" class="btn-action"><i class="fas fa-users-cog"></i> Quản lý Lời Mời</a>
+                    <div class="widget-footer">
+                        <a href="{{ url_for('friends') }}" class="btn-action"><i class="fas fa-users-cog"></i> Quản lý Lời Mời</a>
                     </div>
                 </div>
             </div>
 
             <div class="widget" id="activity-feed-section">
-                 <div class="widget-header">
+                <div class="widget-header">
                     <span class="widget-icon"><i class="fas fa-history"></i></span>
                     <div class="widget-title">
                         <h3>Nhật ký Hoạt động</h3>
@@ -672,45 +672,64 @@
                         <p class="no-activity">Chưa có hoạt động nào được ghi lại.</p>
                     {% endif %}
                 </div>
-                 <div class="widget-footer">
+                <div class="widget-footer">
                     <a href="#" class="btn-view-all">Xem tất cả hoạt động <i class="fas fa-arrow-right"></i></a>
                 </div>
             </div>
-
         </main>
     </div>
 
     <footer class="dashboard-footer">
-        <p>&copy; <script>document.write(new Date().getFullYear())</script> ProjectAI. Bảo lưu mọi quyền.</p>
+        <p>© <script>document.write(new Date().getFullYear())</script> ProjectAI. Bảo lưu mọi quyền.</p>
     </footer>
 
     <script>
-        const themeToggleButton = document.getElementById('theme-toggle-btn');
-        if (themeToggleButton) {
-            const icon = themeToggleButton.querySelector('i');
-            const applyTheme = (theme) => {
-                document.body.dataset.theme = theme;
-                localStorage.setItem('theme_preference_projectai_v2', theme);
-                if (theme === 'dark') {
-                    icon.classList.remove('fa-adjust');
-                    icon.classList.add('fa-sun');
-                } else {
-                    icon.classList.remove('fa-sun');
-                    icon.classList.add('fa-adjust');
-                }
-            };
+        document.addEventListener('DOMContentLoaded', () => {
+            // Theme toggle
+            const themeToggleButton = document.getElementById('theme-toggle-btn');
+            if (themeToggleButton) {
+                const icon = themeToggleButton.querySelector('i');
+                const applyTheme = (theme) => {
+                    document.body.dataset.theme = theme;
+                    localStorage.setItem('theme', theme);
+                    if (theme === 'dark') {
+                        icon.classList.remove('fa-adjust');
+                        icon.classList.add('fa-sun');
+                    } else {
+                        icon.classList.remove('fa-sun');
+                        icon.classList.add('fa-adjust');
+                    }
+                };
 
-            const savedTheme = localStorage.getItem('theme_preference_projectai_v2') || 
-                               (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-            applyTheme(savedTheme);
+                const savedTheme = localStorage.getItem('theme') || 
+                                   (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+                applyTheme(savedTheme);
 
-            themeToggleButton.addEventListener('click', (e) => {
-                e.preventDefault();
-                let currentTheme = document.body.dataset.theme;
-                let newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-                applyTheme(newTheme);
-            });
-        }
+                themeToggleButton.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    let currentTheme = document.body.dataset.theme;
+                    let newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+                    applyTheme(newTheme);
+                });
+            }
+
+            // Avatar upload button
+            const avatarUploadBtn = document.querySelector('.avatar-upload-btn');
+            const avatarUploadInput = document.querySelector('#avatar-upload');
+            if (avatarUploadBtn && avatarUploadInput) {
+                avatarUploadBtn.addEventListener('click', () => {
+                    avatarUploadInput.click();
+                });
+
+                avatarUploadInput.addEventListener('change', (event) => {
+                    const file = event.target.files[0];
+                    if (file) {
+                        alert('Tính năng tải ảnh đại diện đang được phát triển. Vui lòng cập nhật URL ảnh trong chỉnh sửa hồ sơ.');
+                        // Future: Implement file upload with FormData and fetch to a new endpoint
+                    }
+                });
+            }
+        });
     </script>
 </body>
 </html>
