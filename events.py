@@ -1,6 +1,3 @@
-import eventlet
-eventlet.monkey_patch()
-
 from flask import request
 from flask_socketio import emit
 from sqlalchemy import desc

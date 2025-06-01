@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - {{ username }}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #007bff;
+            --secondary-color: #28a745;
+            --text-color: #333;
+            --bg-color: #f4f7f6; /* Màu nền chung cho trang */
+            --card-bg-color: #ffffff; /* Màu nền cho các card/widget */
+            --border-color: #e0e0e0;
+            --shadow-color: rgba(0, 0, 0, 0.1);
+            --navbar-bg: #343a40;
+            --navbar-link-color: rgba(255, 255, 255, 0.75);
+            --navbar-link-hover-color: #ffffff;
+        }
+
+        /* Reset cơ bản */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            display: flex;
+            flex-direction: column; /* Để footer dính xuống dưới nếu nội dung không đủ dài */
+            min-height: 100vh;
+        }
+
+        /* Navbar Styling */
+        .dashboard-navbar {
+            background-color: var(--navbar-bg);
+            padding: 0.8rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 4px var(--shadow-color);
+        }
+
+        .dashboard-navbar .logo a {
+            color: var(--navbar-link-hover-color);
+            text-decoration: none;
+            font-size: 1.6rem;
+            font-weight: bold;
+        }
+
+        .dashboard-navbar .nav-links ul {
+            list-style: none;
+            display: flex;
+            align-items: center;
+        }
+
+        .dashboard-navbar .nav-links ul li {
+            margin-left: 1.5rem;
+        }
+
+        .dashboard-navbar .nav-links ul li a {
+            color: var(--navbar-link-color);
+            text-decoration: none;
+            padding: 0.6rem 0.8rem;
+            border-radius: 5px;
+            transition: color 0.3s ease, background-color 0.3s ease;
+            font-weight: 500;
+        }
+        .dashboard-navbar .nav-links ul li a i {
+            margin-right: 0.5rem;
+        }
+
+        .dashboard-navbar .nav-links ul li a:hover,
+        .dashboard-navbar .nav-links ul li a.active {
+            color: var(--navbar-link-hover-color);
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+        
+        /* Main Dashboard Container */
+        .dashboard-container {
+            display: flex;
+            flex-grow: 1; /* Cho phép container này chiếm không gian còn lại */
+            max-width: 1300px; /* Giới hạn chiều rộng tối đa */
+            width: 95%; /* Chiếm 95% chiều rộng của viewport */
+            margin: 2rem auto; /* Căn giữa và tạo khoảng cách trên dưới */
+            gap: 2rem; /* Khoảng cách giữa sidebar và main content */
+        }
+
+        /* Sidebar Styling */
+        .dashboard-sidebar {
+            flex: 0 0 260px; /* Không co giãn, chiều rộng cố định */
+            background-color: var(--card-bg-color);
+            padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px var(--shadow-color);
+            height: fit-content; /* Chiều cao vừa với nội dung */
+        }
+
+        .dashboard-sidebar .profile-info {
+            text-align: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .dashboard-sidebar .profile-info .avatar {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background-color: var(--primary-color);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem; /* Kích thước chữ cái đầu */
+            margin: 0 auto 1rem;
+            border: 4px solid white; /* Viền cho avatar */
+            box-shadow: 0 0 15px rgba(0,0,0,0.15);
+        }
+        /* Nếu bạn có avatar_url */
+        .dashboard-sidebar .profile-info .avatar img {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+
+        .dashboard-sidebar .profile-info h3 {
+            margin-bottom: 0.3rem;
+            font-size: 1.3rem;
+            color: var(--text-color);
+        }
+        .dashboard-sidebar .profile-info .user-email { /* Giả sử bạn có email */
+            font-size: 0.9rem;
+            color: #6c757d;
+            word-break: break-all;
+        }
+
+
+        .dashboard-sidebar .sidebar-nav ul {
+            list-style: none;
+        }
+
+        .dashboard-sidebar .sidebar-nav ul li a {
+            display: flex; /* Để icon và text thẳng hàng */
+            align-items: center;
+            padding: 0.9rem 1rem;
+            color: #555;
+            text-decoration: none;
+            border-radius: 6px;
+            transition: background-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
+            margin-bottom: 0.6rem;
+            font-weight: 500;
+        }
+        .dashboard-sidebar .sidebar-nav ul li a i {
+            margin-right: 1rem;
+            width: 20px; /* Đảm bảo icon có không gian cố định */
+            text-align: center;
+            color: var(--primary-color);
+        }
+
+        .dashboard-sidebar .sidebar-nav ul li a:hover {
+            background-color: rgba(var(--primary-color-rgb, 0, 123, 255), 0.1); /* Tạo màu nền nhạt khi hover */
+            color: var(--primary-color);
+            transform: translateX(3px);
+        }
+        .dashboard-sidebar .sidebar-nav ul li a.active {
+            background-color: var(--primary-color);
+            color: white;
+            font-weight: bold;
+        }
+        .dashboard-sidebar .sidebar-nav ul li a.active i {
+            color: white;
+        }
+
+        /* Main Content Styling */
+        .dashboard-main-content {
+            flex-grow: 1; /* Cho phép chiếm không gian còn lại */
+        }
+        
+        .welcome-banner {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            color: white;
+            padding: 2rem;
+            border-radius: 8px;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .welcome-banner h2 {
+            margin-bottom: 0.5rem;
+            font-size: 1.8rem;
+            font-weight: 700;
+        }
+        .welcome-banner p {
+            font-size: 1rem;
+            opacity: 0.9;
+        }
+
+        .widgets-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); /* Responsive grid */
+            gap: 1.5rem;
+        }
+
+        .widget {
+            background-color: var(--card-bg-color);
+            padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px var(--shadow-color);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            display: flex;
+            flex-direction: column; /* Sắp xếp nội dung widget theo cột */
+        }
+        .widget:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.12);
+        }
+
+        .widget .widget-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .widget .widget-header i {
+            font-size: 1.5rem;
+            color: var(--primary-color);
+            margin-right: 0.8rem;
+            width: 30px; /* Không gian cho icon */
+            text-align: center;
+        }
+         .widget .widget-header h3 {
+            color: var(--text-color);
+            font-size: 1.1rem;
+            margin: 0;
+            font-weight: 700;
+        }
+
+        .widget .widget-content p {
+            font-size: 0.95rem;
+            color: #555;
+            margin-bottom: 0.5rem;
+            flex-grow: 1; /* Cho phép phần text này chiếm không gian */
+        }
+        .widget .widget-content .stat-number {
+            font-size: 2.2rem;
+            font-weight: bold;
+            color: var(--secondary-color);
+            display: block;
+            margin-bottom: 1rem;
+        }
+        .widget .widget-footer {
+            margin-top: auto; /* Đẩy footer xuống cuối widget */
+        }
+        .widget .widget-footer a.btn {
+            display: inline-block;
+            background-color: var(--primary-color);
+            color: white;
+            padding: 0.6rem 1.2rem;
+            text-decoration: none;
+            border-radius: 5px;
+            transition: background-color 0.2s ease, transform 0.2s ease;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+         .widget .widget-footer a.btn i {
+            margin-right: 0.5rem;
+         }
+        .widget .widget-footer a.btn:hover {
+            background-color: #0056b3; /* Darker shade of primary */
+            transform: translateY(-2px);
+        }
+
+        /* Footer Styling */
+        .dashboard-footer {
+            text-align: center;
+            padding: 1.5rem;
+            margin-top: auto; /* Đẩy footer xuống cuối cùng nếu trang không đủ dài */
+            color: #777;
+            font-size: 0.9rem;
+            background-color: var(--card-bg-color);
+            border-top: 1px solid var(--border-color);
+        }
+
+        /* Responsive Adjustments */
+        @media (max-width: 992px) { /* Tablet và nhỏ hơn */
+            .dashboard-container {
+                flex-direction: column;
+            }
+            .dashboard-sidebar {
+                flex: 0 0 auto; /* Reset flex property */
+                width: 100%;
+                margin-bottom: 2rem;
+            }
+        }
+        @media (max-width: 768px) { /* Mobile */
+            .dashboard-navbar {
+                padding: 1rem;
+                flex-direction: column;
+                gap: 0.8rem;
+            }
+            .dashboard-navbar .nav-links ul {
+                flex-direction: column;
+                gap: 0.5rem;
+                width: 100%;
+                align-items: stretch; /* Cho các link chiếm full width */
+            }
+            .dashboard-navbar .nav-links ul li {
+                margin-left: 0;
+                text-align: center;
+            }
+            .dashboard-navbar .nav-links ul li a {
+                display: block; /* Cho link chiếm full width */
+            }
+
+             .widgets-grid {
+                grid-template-columns: 1fr; /* Stack widgets trên màn hình nhỏ */
+            }
+            .welcome-banner {
+                padding: 1.5rem;
+            }
+            .welcome-banner h2 {
+                font-size: 1.5rem;
+            }
+        }
+
+        /* Biến màu RGB để dùng trong rgba() cho box-shadow hoặc background-color với alpha */
+        :root {
+            --primary-color-rgb: 0, 123, 255;
+            --text-color-rgb: 51, 51, 51;
+        }
+        [data-theme="dark"] {
+            --primary-color-rgb: 51, 153, 255;
+            --text-color-rgb: 224, 224, 224;
+        }
+
+    </style>
+</head>
+<body>
+    <nav class="dashboard-navbar">
+        <div class="logo">
+            <a href="{{ url_for('home') }}">ProjectAI</a>
+        </div>
+        <div class="nav-links">
+            <ul>
+                <li><a href="{{ url_for('home') }}"><i class="fas fa-home"></i> Trang chủ</a></li>
+                <li><a href="{{ url_for('chat_room') }}"><i class="fas fa-comments"></i> Phòng Chat</a></li>
+                <li><a href="{{ url_for('dashboard') }}" class="active"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+                {% if current_user.is_authenticated %}
+                    <li><a href="{{ url_for('logout') }}"><i class="fas fa-sign-out-alt"></i> Đăng xuất</a></li>
+                {% else %}
+                    <li><a href="{{ url_for('login') }}"><i class="fas fa-sign-in-alt"></i> Đăng nhập</a></li>
+                {% endif %}
+            </ul>
+        </div>
+    </nav>
+
+    <div class="dashboard-container">
+        <aside class="dashboard-sidebar">
+            <div class="profile-info">
+                <div class="avatar">
+                    {% if current_user.avatar_url %}
+                        <img src="{{ current_user.avatar_url }}" alt="Avatar của {{ username }}">
+                    {% else %}
+                        {{ username[0]|upper if username else 'U' }}
+                    {% endif %}
+                </div>
+                <h3>{{ username }}</h3>
+                <p>Ngày tham gia: {{ current_user.created_at.strftime('%d/%m/%Y') if current_user.created_at else 'N/A' }}</p>
+            </div>
+            <nav class="sidebar-nav">
+                <ul>
+                    <li><a href="{{ url_for('dashboard') }}" class="active"><i class="fas fa-user-circle"></i> Tổng quan</a></li>
+                    <li><a href="#"><i class="fas fa-envelope"></i> Tin nhắn <span class="badge">(3)</span></a></li> <li><a href="#"><i class="fas fa-users"></i> Bạn bè</a></li> <li><a href="#"><i class="fas fa-chart-line"></i> Thống kê Hoạt động</a></li> <li><a href="#"><i class="fas fa-cog"></i> Cài đặt Tài khoản</a></li> <li><a href="#"><i class="fas fa-question-circle"></i> Trợ giúp</a></li> </ul>
+            </nav>
+        </aside>
+
+        <main class="dashboard-main-content">
+            <div class="welcome-banner">
+                <h2>Chào mừng trở lại, {{ username }}!</h2>
+                <p>Đây là không gian cá nhân của bạn. Hãy kiểm tra các hoạt động và tùy chỉnh cài đặt nhé.</p>
+            </div>
+
+            <div class="widgets-grid">
+                <div class="widget">
+                    <div class="widget-header">
+                        <i class="fas fa-paper-plane"></i>
+                        <h3>Tin nhắn Đã Gửi</h3>
+                    </div>
+                    <div class="widget-content">
+                        <span class="stat-number">{{ public_message_count }}</span>
+                        <p>Tổng số tin nhắn công khai bạn đã gửi trong các phòng chat.</p>
+                    </div>
+                    <div class="widget-footer">
+                        <a href="{{ url_for('chat_room') }}" class="btn"><i class="fas fa-plus-circle"></i> Gửi Tin Nhắn Mới</a>
+                    </div>
+                </div>
+
+                <div class="widget">
+                     <div class="widget-header">
+                        <i class="fas fa-user-clock"></i>
+                        <h3>Thời Gian Hoạt Động</h3>
+                    </div>
+                    <div class="widget-content">
+                        <span class="stat-number">N/A</span>
+                        <p>Tổng thời gian bạn đã hoạt động trên hệ thống.</p>
+                    </div>
+                     <div class="widget-footer">
+                        <a href="#" class="btn"><i class="fas fa-history"></i> Xem Chi Tiết</a>
+                    </div>
+                </div>
+                
+                <div class="widget">
+                    <div class="widget-header">
+                        <i class="fas fa-bell"></i>
+                        <h3>Thông Báo Mới</h3>
+                    </div>
+                    <div class="widget-content">
+                         <span class="stat-number">0</span>
+                        <p>Bạn không có thông báo mới nào chưa đọc.</p>
+                    </div>
+                    <div class="widget-footer">
+                        <a href="#" class="btn"><i class="fas fa-list-alt"></i> Xem Tất Cả Thông Báo</a>
+                    </div>
+                </div>
+
+                <div class="widget">
+                    <div class="widget-header">
+                        <i class="fas fa-shield-alt"></i>
+                        <h3>Bảo Mật Tài Khoản</h3>
+                    </div>
+                    <div class="widget-content">
+                        <p>Đảm bảo tài khoản của bạn luôn an toàn. Cập nhật mật khẩu định kỳ.</p>
+                        </div>
+                     <div class="widget-footer">
+                        <a href="#" class="btn"><i class="fas fa-key"></i> Đổi Mật Khẩu</a>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <footer class="dashboard-footer">
+        <p>&copy; <script>document.write(new Date().getFullYear())</script> ProjectAI. Bảo lưu mọi quyền.</p>
+    </footer>
+
+    <script>
+        // Logic cơ bản cho theme toggle (nếu bạn không dùng file JS riêng)
+        // const themeToggle = document.querySelector('.theme-toggle-icon'); // Cần thêm icon này vào navbar
+        // if (themeToggle) {
+        //     themeToggle.addEventListener('click', () => {
+        //         document.body.dataset.theme = document.body.dataset.theme === 'dark' ? 'light' : 'dark';
+        //         localStorage.setItem('theme', document.body.dataset.theme);
+        //         // Cập nhật icon nếu cần
+        //     });
+        //     // Khôi phục theme đã lưu
+        //     const savedTheme = localStorage.getItem('theme');
+        //     if (savedTheme) {
+        //         document.body.dataset.theme = savedTheme;
+        //     }
+        // }
+    </script>
+</body>
+</html>
+
