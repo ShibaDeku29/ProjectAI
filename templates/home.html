@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title data-i18n="homeTitle">Chào mừng đến ProjectAI Chat</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-XXXXXXXXXX'); // Thay G-XXXXXXXXXX bằng ID Google Analytics của bạn
+    </script>
+    <style>
+        :root {
+            --primary-color: #007bff;
+            --secondary-color: #28a745;
+            --text-color: #1a1a2e;
+            --bg-light: rgba(255, 255, 255, 0.95);
+            --bg-dark: rgba(30, 30, 46, 0.95);
+            --button-primary-bg: linear-gradient(90deg, #007bff, #0056b3);
+            --button-secondary-bg: linear-gradient(90deg, #28a745, #1e7e34);
+        }
+
+        [data-theme="dark"] {
+            --primary-color: #3399ff;
+            --secondary-color: #34c759;
+            --text-color: #e0e0e0;
+            --bg-light: var(--bg-dark);
+            --button-primary-bg: linear-gradient(90deg, #3399ff, #0066cc);
+            --button-secondary-bg: linear-gradient(90deg, #34c759, #279b48);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Roboto', Arial, sans-serif;
+            margin: 0;
+            overflow: hidden; /* Giữ lại để video nền không bị scroll */
+            display: flex;
+            flex-direction: column; /* Cho phép footer ở dưới */
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            position: relative;
+            color: var(--text-color);
+            background-color: var(--bg-light); /* Màu nền cho body */
+        }
+
+        video.background-video {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            z-index: -1;
+            opacity: 0.7;
+        }
+
+        .main-content {
+            text-align: center;
+            background-color: var(--bg-light);
+            padding: 40px 50px;
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            max-width: 700px;
+            width: 90%;
+            animation: fadeInScale 0.7s ease-out forwards;
+            backdrop-filter: blur(10px);
+            z-index: 10;
+            margin-top: 60px; /* Để không bị che bởi header controls */
+        }
+
+        @keyframes fadeInScale {
+            from {
+                opacity: 0;
+                transform: scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .main-content h1 {
+            font-size: 2.8em;
+            margin-bottom: 20px;
+            color: var(--primary-color);
+            font-weight: 700;
+        }
+
+        .main-content p {
+            font-size: 1.2em;
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+
+        .cta-buttons a {
+            display: inline-block;
+            padding: 15px 30px;
+            margin: 10px;
+            border-radius: 25px;
+            text-decoration: none;
+            color: white;
+            font-size: 1.1em;
+            font-weight: bold;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            border: none;
+        }
+
+        .cta-buttons .btn-login {
+            background: var(--button-primary-bg);
+        }
+
+        .cta-buttons .btn-register {
+            background: var(--button-secondary-bg);
+        }
+        
+        .cta-buttons .btn-chat {
+            background: var(--button-primary-bg); /* Giống login hoặc màu khác tùy ý */
+        }
+
+
+        .cta-buttons a:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .header-controls {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            gap: 15px;
+            z-index: 20; /* Đảm bảo các nút điều khiển ở trên cùng */
+        }
+
+        .theme-toggle, .sound-toggle, .lang-toggle {
+            cursor: pointer;
+            font-size: 1.5em; /* Tăng kích thước icon */
+            color: var(--text-color); /* Màu icon sẽ thay đổi theo theme */
+            padding: 8px;
+            background-color: var(--bg-light); /* Nền cho icon để dễ thấy hơn trên video */
+            border-radius: 50%;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease, color 0.3s ease, background-color 0.3s ease;
+        }
+
+        .theme-toggle:hover, .sound-toggle:hover, .lang-toggle:hover {
+            transform: scale(1.15);
+        }
+        
+        /* Các hiệu ứng nổi (giữ lại nếu muốn) */
+        .floating-icon, .bubble, .particle {
+             position: absolute;
+             pointer-events: none;
+             z-index: 1; /* Đảm bảo dưới main content */
+        }
+        .floating-icon { font-size: 1.8em; color: rgba(0, 123, 255, 0.2); opacity: 0.3; animation: float 8s ease-in-out infinite; }
+        @keyframes float { 0%, 100% { transform: translate(0, 0) rotate(0deg); } 50% { transform: translate(15px, -25px) rotate(120deg); }}
+        .icon-heart { top: 15%; left: 20%; animation-delay: 0s; }
+        .icon-star { top: 25%; right: 10%; animation-delay: 1s; }
+        .icon-smile { bottom: 15%; left: 30%; animation-delay: 2s; }
+        .icon-cloud { top: 10%; right: 30%; animation-delay: 3s; }
+
+        .bubble { bottom: -50px; background: rgba(255, 255, 255, 0.2); border-radius: 50%; animation: bubbleAnim 7s ease-in-out infinite; }
+        @keyframes bubbleAnim { 0% { transform: scale(0); opacity: 0; bottom: -50px; } 50% { transform: scale(1.2); opacity: 0.6; bottom: 50%; } 100% { transform: scale(0); opacity: 0; bottom: -50px; }}
+        .bubble1 { width: 45px; height: 45px; left: 15%; animation-delay: 0s; }
+        .bubble2 { width: 35px; height: 35px; left: 55%; animation-delay: 2s; }
+        .bubble3 { width: 40px; height: 40px; right: 15%; animation-delay: 3.5s; }
+        
+        .user-greeting {
+            margin-top: 15px;
+            font-size: 1.1em;
+            color: var(--secondary-color);
+        }
+
+    </style>
+</head>
+<body>
+    <video class="background-video" autoplay muted loop playsinline>
+        <source src="https://assets.mixkit.co/videos/preview/mixkit-abstract-blue-motion-background-345.mp4" type="video/mp4">
+        Trình duyệt của bạn không hỗ trợ video tag.
+    </video>
+
+    <i class="fas fa-heart floating-icon icon-heart"></i>
+    <i class="fas fa-star floating-icon icon-star"></i>
+    <i class="fas fa-smile floating-icon icon-smile"></i>
+    <i class="fas fa-cloud floating-icon icon-cloud"></i>
+    <div class="bubble bubble1"></div>
+    <div class="bubble bubble2"></div>
+    <div class="bubble bubble3"></div>
+
+    <div class="header-controls">
+        <i class="fas fa-moon theme-toggle" id="themeToggle"></i>
+        <i class="fas fa-volume-up sound-toggle" id="soundToggle"></i>
+        <i class="fas fa-globe lang-toggle" id="langToggle"></i>
+    </div>
+
+    <div class="main-content">
+        <h1 data-i18n="welcomeTitle">Chào mừng đến ProjectAI Chat!</h1>
+        <p data-i18n="welcomeMessage">Kết nối, trò chuyện và chia sẻ khoảnh khắc với bạn bè và đồng nghiệp một cách dễ dàng và nhanh chóng.</p>
+        
+        {% if current_user.is_authenticated %}
+            <p class="user-greeting" data-i18n="loggedInWelcome">Chào mừng trở lại, <strong>{{ current_user.username }}</strong>!</p>
+            <div class="cta-buttons">
+                <a href="{{ url_for('chat_room') }}" class="btn-chat" data-i18n="goToChat">Vào Phòng Chat</a>
+                <a href="{{ url_for('logout') }}" class="btn-register" data-i18n="logout">Đăng xuất</a>
+            </div>
+        {% else %}
+            <div class="cta-buttons">
+                <a href="{{ url_for('login') }}" class="btn-login" data-i18n="login">Đăng nhập</a>
+                <a href="{{ url_for('register') }}" class="btn-register" data-i18n="register">Đăng ký</a>
+            </div>
+        {% endif %}
+    </div>
+
+    <script>
+        // Sound effect
+        const clickSound = new Audio('data:audio/wav;base64,UklGRiYAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=');
+
+        // Translations
+        const translations = {
+            vi: {
+                homeTitle: 'Chào mừng đến ProjectAI Chat',
+                welcomeTitle: 'Chào mừng đến ProjectAI Chat!',
+                welcomeMessage: 'Kết nối, trò chuyện và chia sẻ khoảnh khắc với bạn bè và đồng nghiệp một cách dễ dàng và nhanh chóng.',
+                login: 'Đăng nhập',
+                register: 'Đăng ký',
+                loggedInWelcome: 'Chào mừng trở lại',
+                goToChat: 'Vào Phòng Chat',
+                logout: 'Đăng xuất'
+            },
+            en: {
+                homeTitle: 'Welcome to ProjectAI Chat',
+                welcomeTitle: 'Welcome to ProjectAI Chat!',
+                welcomeMessage: 'Connect, chat, and share moments with friends and colleagues easily and quickly.',
+                login: 'Login',
+                register: 'Register',
+                loggedInWelcome: 'Welcome back',
+                goToChat: 'Go to Chat Room',
+                logout: 'Logout'
+            }
+        };
+
+        // Load preferences
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        const savedSound = localStorage.getItem('sound') !== 'false'; // Default to true if not set
+        let savedLang = localStorage.getItem('lang') || 'vi';
+        document.body.dataset.theme = savedTheme;
+        let soundEnabled = savedSound;
+
+        function updateLanguage(lang) {
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.dataset.i18n;
+                // Handle case for dynamic content like "Chào mừng trở lại, {{ username }}!"
+                if (el.dataset.i18nBase && translations[lang][el.dataset.i18nBase]) {
+                     // This part is a bit tricky for combined static/dynamic text,
+                     // for simplicity, we'll mostly rely on separate elements or Jinja for dynamic parts.
+                     // Here, Jinja already handles the username.
+                } else if (translations[lang][key]) {
+                     el.innerHTML = translations[lang][key] + (el.querySelector('strong') ? `, <strong>${el.querySelector('strong').innerText}</strong>!` : '');
+                }
+
+
+                // Update title specifically
+                if (key === 'homeTitle') {
+                    document.title = translations[lang][key];
+                }
+            });
+            localStorage.setItem('lang', lang);
+            savedLang = lang;
+        }
+        
+        // Initialize UI elements after DOM is loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            const themeToggle = document.getElementById('themeToggle');
+            const soundToggle = document.getElementById('soundToggle');
+            const langToggle = document.getElementById('langToggle');
+
+            themeToggle.classList.toggle('fa-moon', savedTheme === 'light');
+            themeToggle.classList.toggle('fa-sun', savedTheme === 'dark');
+            
+            soundToggle.classList.toggle('fa-volume-up', soundEnabled);
+            soundToggle.classList.toggle('fa-volume-mute', !soundEnabled);
+
+            updateLanguage(savedLang); // Initial language setup
+
+            themeToggle.addEventListener('click', () => {
+                document.body.dataset.theme = document.body.dataset.theme === 'dark' ? 'light' : 'dark';
+                themeToggle.classList.toggle('fa-moon');
+                themeToggle.classList.toggle('fa-sun');
+                localStorage.setItem('theme', document.body.dataset.theme);
+                if (soundEnabled) clickSound.play();
+            });
+
+            soundToggle.addEventListener('click', () => {
+                soundEnabled = !soundEnabled;
+                soundToggle.classList.toggle('fa-volume-up');
+                soundToggle.classList.toggle('fa-volume-mute');
+                localStorage.setItem('sound', soundEnabled);
+                if (soundEnabled) clickSound.play();
+            });
+
+            langToggle.addEventListener('click', () => {
+                const newLang = savedLang === 'vi' ? 'en' : 'vi';
+                updateLanguage(newLang);
+                if (soundEnabled) clickSound.play();
+            });
+        });
+
+    </script>
+</body>
+</html>

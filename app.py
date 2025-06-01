@@ -9,6 +9,9 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
+# Thêm import datetime cho events.py (mặc dù nó được dùng trong events.py, nhưng để đây cho dễ thấy)
+from datetime import datetime
+
 
 from config import Config
 from events import register_events
@@ -23,13 +26,10 @@ migrate = Migrate(app, db)
 # Cấu hình Flask-Login
 login_manager = LoginManager()
 login_manager.init_app(app)
-login_manager.login_view = 'login' # Tên hàm view cho trang đăng nhập (sẽ chuyển hướng đến đây nếu chưa đăng nhập)
+login_manager.login_view = 'login' # Tên hàm view cho trang đăng nhập
 
 @login_manager.user_loader
 def load_user(user_id):
-    """
-    Hàm này được Flask-Login sử dụng để tải người dùng từ ID phiên (session ID).
-    """
     return User.query.get(int(user_id))
 
 # Định nghĩa Model cho bảng tin nhắn
@@ -37,24 +37,23 @@ class Message(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), nullable=False)
     message = db.Column(db.String(500), nullable=False)
-    timestamp = db.Column(db.DateTime, default=db.func.now()) # Thời gian tạo tin nhắn
+    timestamp = db.Column(db.DateTime, default=datetime.now) # Sửa db.func.now() thành datetime.now
 
     def __repr__(self):
         return f'<Message {self.username}: {self.message}>'
 
-    # Phương thức để chuyển đổi đối tượng tin nhắn thành từ điển, tiện cho việc gửi qua SocketIO
     def to_dict(self):
         return {
             'username': self.username,
             'message': self.message,
-            'timestamp': self.timestamp.isoformat() # Chuyển đổi datetime sang chuỗi ISO 8601
+            'timestamp': self.timestamp.isoformat()
         }
 
 # Định nghĩa Model cho bảng người dùng
-class User(UserMixin, db.Model): # UserMixin cung cấp các thuộc tính và phương thức cần thiết cho Flask-Login
+class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
-    password_hash = db.Column(db.String(256), nullable=False) # Thay đổi độ dài từ 128 lên 256 (hoặc 512)
+    password_hash = db.Column(db.String(256), nullable=False)
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
@@ -67,19 +66,23 @@ class User(UserMixin, db.Model): # UserMixin cung cấp các thuộc tính và p
 
 
 socketio = SocketIO(app)
-
-# Đăng ký các sự kiện SocketIO, truyền đối tượng 'db' và 'current_user' để các hàm xử lý sự kiện có thể tương tác với DB và biết người dùng hiện tại
 register_events(socketio, db, current_user)
 
 @app.route('/')
+def home():
+    """Route cho trang chủ/landing page."""
+    return render_template('home.html')
+
+@app.route('/chat')
 @login_required # Chỉ cho phép người dùng đã đăng nhập truy cập trang chat
-def index():
-    return render_template('index.html')
+def chat_room(): # Đổi tên hàm từ index thành chat_room
+    """Route cho phòng chat chính."""
+    return render_template('index.html') # index.html vẫn là giao diện chat
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
-    if current_user.is_authenticated: # Nếu đã đăng nhập, chuyển hướng về trang chat
-        return redirect(url_for('index'))
+    if current_user.is_authenticated:
+        return redirect(url_for('chat_room')) # Chuyển hướng đến phòng chat nếu đã đăng nhập
 
     if request.method == 'POST':
         username = request.form.get('username')
@@ -99,8 +102,8 @@ def register():
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    if current_user.is_authenticated: # Nếu đã đăng nhập, chuyển hướng về trang chat
-        return redirect(url_for('index'))
+    if current_user.is_authenticated:
+        return redirect(url_for('chat_room')) # Chuyển hướng đến phòng chat nếu đã đăng nhập
 
     if request.method == 'POST':
         username = request.form.get('username')
@@ -108,32 +111,32 @@ def login():
 
         user = User.query.filter_by(username=username).first()
         if user and user.check_password(password):
-            login_user(user) # Đăng nhập người dùng
+            login_user(user)
             flash('Đăng nhập thành công!', 'success')
-            next_page = request.args.get('next') # Lấy URL mà người dùng muốn truy cập trước đó (nếu có)
-            return redirect(next_page or url_for('index'))
+            # Chuyển hướng đến trang chat sau khi đăng nhập thành công
+            # next_page vẫn được giữ lại nếu người dùng bị chuyển hướng đến login từ một trang yêu cầu login
+            next_page = request.args.get('next')
+            return redirect(next_page or url_for('chat_room'))
         else:
             flash('Tên người dùng hoặc mật khẩu không đúng!', 'danger')
     return render_template('login.html')
 
 @app.route('/logout')
-@login_required # Yêu cầu đăng nhập để đăng xuất
+@login_required
 def logout():
     logout_user()
     flash('Bạn đã đăng xuất!', 'info')
-    return redirect(url_for('login'))
+    return redirect(url_for('home')) # Chuyển hướng về trang chủ sau khi đăng xuất
 
 
 if __name__ == '__main__':
-    # Gọi eventlet.monkey_patch() CHỈ khi ứng dụng được chạy trực tiếp
-    # (Tức là không phải khi các lệnh 'flask db' được chạy)
-    import eventlet
-    eventlet.monkey_patch()
+    # eventlet.monkey_patch() # Đã gọi ở đầu file
 
-    # Tạo bảng User và Message nếu chưa có (chỉ cho phát triển cục bộ với SQLite)
-    # Với PostgreSQL trên Render, bạn sẽ dùng 'flask db upgrade' trong Start Command.
     with app.app_context():
         db.create_all()
 
     port = int(os.environ.get('PORT', 5000))
+    # Chạy với reloader=False khi dùng eventlet trong chế độ debug để tránh lỗi
+    # Hoặc đảm bảo eventlet.monkey_patch() được gọi rất sớm.
+    # Hiện tại đã gọi ở đầu file nên không cần reloader=False một cách cứng nhắc.
     socketio.run(app, host='0.0.0.0', port=port, debug=Config.DEBUG)
