@@ -1,13 +1,12 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title data-i18n="chatTitle">Trò chuyện Thời gian thực</title>
-    <script src="https://cdn.socket.io/socket.io-3.0.3.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <!-- Google Analytics -->
+    <title data-i18n="chatTitle">Trò chuyện - ProjectAI Chat</title>
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
     <script>
         window.dataLayer = window.dataLayer || [];
@@ -19,199 +18,210 @@
         :root {
             --primary-color: #007bff;
             --secondary-color: #28a745;
-            --text-color: #1a1a2e;
-            --bg-light: rgba(255, 255, 255, 0.95);
-            --bg-dark: rgba(30, 30, 46, 0.95);
-            --input-bg: #f8f9fa;
+            --text-color: #343a40;
+            --text-muted-color: #6c757d;
+            --bg-color: #f8f9fa;
+            --card-bg-color: #ffffff;
+            --border-color: #dee2e6;
+            --shadow-sm: 0 .125rem .25rem rgba(0,0,0,.075);
+            --shadow-md: 0 .5rem 1rem rgba(0,0,0,.15);
+            --navbar-bg: #343a40;
+            --navbar-link-color: rgba(255, 255, 255, 0.8);
+            --navbar-link-hover-color: #ffffff;
+            --sidebar-active-bg: #007bff;
+            --sidebar-active-color: #ffffff;
+            --danger-color: #dc3545;
+            --info-color: #17a2b8;
+            --warning-color: #ffc107;
         }
 
         [data-theme="dark"] {
-            --primary-color: #3399ff;
-            --secondary-color: #34c759;
-            --text-color: #e0e0e0;
-            --bg-light: var(--bg-dark);
-            --input-bg: #2a2a3b;
+            --primary-color: #4dabf7;
+            --secondary-color: #40c057;
+            --text-color: #e9ecef;
+            --text-muted-color: #adb5bd;
+            --bg-color: #121212;
+            --card-bg-color: #1e1e1e;
+            --border-color: #343a40;
+            --navbar-bg: #212529;
+            --sidebar-active-bg: #4dabf7;
+            --info-color: #39cccc;
+            --warning-color: #f39c12;
         }
 
-        * {
-            box-sizing: border-box;
+        *, *::before, *::after {
             margin: 0;
             padding: 0;
+            box-sizing: border-box;
         }
 
         body {
-            font-family: 'Roboto', Arial, sans-serif;
-            margin: 0;
-            overflow: hidden;
+            font-family: 'Roboto', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
             display: flex;
-            justify-content: center;
-            align-items: center;
+            flex-direction: column;
             min-height: 100vh;
-            background: linear-gradient(135deg, #007bff, #28a745);
-            position: relative;
+            font-size: 16px;
         }
 
-        .main-container {
-            display: flex;
-            background-color: var(--bg-light);
-            border-radius: 16px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-            width: 90%;
-            max-width: 1000px;
-            overflow: hidden;
-            animation: slideIn 0.5s ease-out;
-            backdrop-filter: blur(10px);
-            z-index: 10;
-        }
-
-        .chat-wrapper {
-            flex-grow: 1;
-            display: flex;
-            flex-direction: column;
-            min-width: 500px;
-            position: relative; /* Added to contain toggle buttons */
-        }
-
-        .online-users-sidebar {
-            width: 250px;
-            background-color: var(--bg-light);
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            transition: transform 0.3s ease;
-        }
-
-        .online-users-sidebar h3 {
-            color: var(--text-color);
-            margin-bottom: 15px;
-            font-size: 1.2em;
-            text-align: center;
-            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
-            padding-bottom: 10px;
-        }
-
-        #online-users-list {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-            flex-grow: 1;
-            overflow-y: auto;
-            scroll-behavior: smooth;
-        }
-
-        #online-users-list li {
-            padding: 8px 0;
-            color: var(--primary-color);
-            font-weight: bold;
-            display: flex;
-            align-items: center;
-            cursor: pointer;
-            transition: background-color 0.3s ease;
-        }
-
-        #online-users-list li:hover, #online-users-list li:focus {
-            background-color: rgba(0, 123, 255, 0.1);
-        }
-
-        #online-users-list li.selected {
-            background-color: rgba(0, 123, 255, 0.2);
-        }
-
-        #online-users-list li::before {
-            content: '•';
-            color: var(--secondary-color);
-            font-size: 1.5em;
-            line-height: 0;
-            margin-right: 8px;
-        }
-
-        .recipient-select-area {
-            margin-bottom: 10px;
-            text-align: left;
-        }
-
-        .recipient-select-area label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: bold;
-            color: var(--text-color);
-        }
-
-        .recipient-select-area select {
-            width: 100%;
-            padding: 10px;
-            border: 2px solid #e0e0e0;
-            border-radius: 10px;
-            font-size: 0.9em;
-            background: var(--input-bg);
-            transition: border-color 0.3s ease, box-shadow 0.3s ease;
-        }
-
-        .recipient-select-area select:focus {
-            outline: none;
-            border-color: var(--primary-color);
-            box-shadow: 0 0 12px rgba(0, 123, 255, 0.3);
-        }
-
-        h2 {
-            color: #ffffff;
-            text-align: center;
-            padding: 20px;
-            margin-bottom: 0;
-            font-size: 1.8em;
-            background: var(--primary-color);
-            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
-            animation: fadeInDown 0.5s ease;
-        }
-
-        .user-info {
-            background-color: var(--input-bg);
-            padding: 10px 20px;
-            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+        .dashboard-navbar {
+            background-color: var(--navbar-bg);
+            padding: 0.75rem 2rem;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            font-size: 0.95em;
-            color: var(--text-color);
+            box-shadow: var(--shadow-sm);
+            position: sticky;
+            top: 0;
+            z-index: 1020;
         }
 
-        .user-info span {
-            font-weight: bold;
+        .dashboard-navbar .logo a {
+            color: var(--navbar-link-hover-color);
+            text-decoration: none;
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .dashboard-navbar .nav-links ul {
+            list-style: none;
+            display: flex;
+            align-items: center;
+        }
+
+        .dashboard-navbar .nav-links ul li {
+            margin-left: 1.25rem;
+        }
+
+        .dashboard-navbar .nav-links ul li a {
+            color: var(--navbar-link-color);
+            text-decoration: none;
+            padding: 0.5rem 0.75rem;
+            border-radius: 0.25rem;
+            transition: color 0.2s ease, background-color 0.2s ease;
+            font-weight: 500;
+            font-size: 0.95rem;
+        }
+        .dashboard-navbar .nav-links ul li a i {
+            margin-right: 0.4rem;
+        }
+
+        .dashboard-navbar .nav-links ul li a:hover,
+        .dashboard-navbar .nav-links ul li a.active {
+            color: var(--navbar-link-hover-color);
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .chat-container {
+            display: flex;
+            flex-grow: 1;
+            max-width: 1400px;
+            width: 95%;
+            margin: 1.5rem auto;
+            gap: 1.5rem;
+        }
+
+        .chat-sidebar {
+            flex: 0 0 280px;
+            background-color: var(--card-bg-color);
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            box-shadow: var(--shadow-sm);
+            height: fit-content;
+            position: sticky;
+            top: calc(0.75rem * 2 + 1.5rem + 1.5rem + 1.5rem);
+        }
+
+        .chat-sidebar h2 {
+            font-size: 1.25rem;
+            color: var(--text-color);
+            margin-bottom: 1rem;
+        }
+
+        .chat-sidebar .conversation-list {
+            list-style: none;
+        }
+
+        .chat-sidebar .conversation-list li {
+            margin-bottom: 0.5rem;
+        }
+
+        .chat-sidebar .conversation-list li a {
+            display: flex;
+            align-items: center;
+            padding: 0.8rem 1rem;
+            color: var(--text-muted-color);
+            text-decoration: none;
+            border-radius: 0.375rem;
+            transition: background-color 0.2s ease, color 0.2s ease;
+            font-weight: 500;
+            font-size: 0.95rem;
+        }
+
+        .chat-sidebar .conversation-list li a i {
+            margin-right: 0.8rem;
+            width: 20px;
+            text-align: center;
+            color: var(--text-muted-color);
+            transition: color 0.2s ease;
+        }
+
+        .chat-sidebar .conversation-list li a:hover {
+            background-color: rgba(var(--primary-color-rgb, 0, 123, 255), 0.08);
+            color: var(--primary-color);
+        }
+        .chat-sidebar .conversation-list li a:hover i {
             color: var(--primary-color);
         }
 
-        .user-info a {
-            color: #dc3545;
-            text-decoration: none;
-            padding: 5px 10px;
-            border: 2px solid #dc3545;
-            border-radius: 10px;
-            transition: background-color 0.3s ease, color 0.3s ease;
+        .chat-sidebar .conversation-list li a.active {
+            background-color: var(--sidebar-active-bg);
+            color: var(--sidebar-active-color);
+            font-weight: 700;
+        }
+        .chat-sidebar .conversation-list li a.active i {
+            color: var(--sidebar-active-color);
         }
 
-        .user-info a:hover, .user-info a:focus {
-            background-color: #dc3545;
-            color: white;
-        }
-
-        #chat-container {
+        .chat-main-content {
             flex-grow: 1;
-            height: 400px;
+            background-color: var(--card-bg-color);
+            border-radius: 0.5rem;
+            box-shadow: var(--shadow-sm);
+            display: flex;
+            flex-direction: column;
+            min-height: 600px;
+        }
+
+        .page-header {
+            margin: 1.5rem;
+        }
+        .page-header h1 {
+            font-size: 1.75rem;
+            font-weight: 500;
+            color: var(--text-color);
+        }
+        .page-header p {
+            color: var(--text-muted-color);
+            font-size: 0.95rem;
+        }
+
+        .chat-area {
+            flex-grow: 1;
+            padding: 1rem;
             overflow-y: auto;
-            padding: 20px;
-            background-color: var(--bg-light);
-            scroll-behavior: smooth;
         }
 
         .message-row {
-            margin-bottom: 12px;
-            padding: 10px 15px;
-            border-radius: 18px;
+            margin-bottom: 1rem;
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
             max-width: 80%;
             word-wrap: break-word;
             line-height: 1.4;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            animation: slideInMessage 0.3s ease forwards;
+            box-shadow: var(--shadow-sm);
         }
 
         .message-row.sent {
@@ -226,131 +236,82 @@
             margin-right: auto;
         }
 
-        .message-row.private {
-            background-color: #fff3cd;
-            border: 2px dashed #ffca2c;
-        }
-
         .username {
             font-weight: 700;
             color: var(--primary-color);
             display: block;
-            margin-bottom: 4px;
+            margin-bottom: 0.25rem;
         }
 
         .message-content {
             color: var(--text-color);
         }
 
-        #message-input-area {
-            display: flex;
-            padding: 15px;
-            gap: 10px;
-            background-color: var(--bg-light);
-            flex-direction: column;
+        .message-meta {
+            font-size: 0.75rem;
+            color: var(--text-muted-color);
+            margin-top: 0.25rem;
         }
 
-        .message-input-controls {
-            display: flex;
-            gap: 10px;
-            width: 100%;
-            position: relative;
+        .typing-indicator {
+            font-size: 0.85rem;
+            color: var(--text-muted-color);
+            font-style: italic;
+            margin: 0.5rem 1rem;
+            display: none;
         }
 
-        .message-input-controls input {
+        .message-input-area {
+            padding: 1rem;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .message-input-area input {
             flex-grow: 1;
-            padding: 12px 15px;
-            border: 2px solid #e0e0e0;
-            border-radius: 25px;
-            font-size: 1em;
+            padding: 0.75rem;
+            border: 1px solid var(--border-color);
+            border-radius: 0.375rem;
+            font-size: 0.95rem;
             background: var(--input-bg);
             transition: border-color 0.3s ease, box-shadow 0.3s ease;
         }
 
-        .message-input-controls input:focus {
+        .message-input-area input:focus {
             outline: none;
             border-color: var(--primary-color);
-            box-shadow: 0 0 12px rgba(0, 123, 255, 0.3);
+            box-shadow: 0 0 8px rgba(0, 123, 255, 0.2);
         }
 
-        .message-input-controls label {
-            position: absolute;
-            top: -10px;
-            left: 20px;
-            font-size: 0.85em;
-            color: var(--text-color);
-            background: var(--bg-light);
-            padding: 0 5px;
-            transition: all 0.2s ease;
-        }
-
-        .message-input-controls input:placeholder-shown + label {
-            top: 12px;
-            font-size: 1em;
-            color: #888;
-        }
-
-        .message-input-controls input:focus + label {
-            top: -10px;
-            font-size: 0.85em;
-            color: var(--primary-color);
-        }
-
-        .message-input-controls .error {
-            color: #ff6b6b;
-            font-size: 0.85em;
-            margin-top: 5px;
-            display: none;
-            position: absolute;
-            bottom: -20px;
-            left: 0;
-        }
-
-        .message-input-controls input:invalid[required] + label + .error {
-            display: block;
-        }
-
-        .message-input-controls button {
-            padding: 12px 25px;
+        .message-input-area button {
+            padding: 0.75rem 1.5rem;
             background: var(--primary-color);
             color: white;
             border: none;
-            border-radius: 25px;
-            font-size: 1em;
-            font-weight: 700;
+            border-radius: 0.375rem;
+            font-size: 0.95rem;
+            font-weight: 500;
             cursor: pointer;
-            transition: background-color 0.3s ease, box-shadow 0.3s ease;
-            position: relative;
+            transition: background-color 0.3s ease;
         }
 
-        .message-input-controls button:hover, .message-input-controls button:focus {
-            background: var(--secondary-color);
-            box-shadow: 0 4px 15px rgba(0, 123, 255, 0.4);
+        .message-input-area button:hover {
+            background: #0056b3;
         }
 
-        .message-input-controls button.sending::after {
-            content: '';
-            width: 20px;
-            height: 20px;
-            border: 2px solid white;
-            border-top: 2px solid transparent;
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-            position: absolute;
-            right: 10px;
-            top: 50%;
-            transform: translateY(-50%);
+        .message-input-area button:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
         }
 
         .flash-message {
-            padding: 12px;
-            margin: 10px 15px;
-            border-radius: 8px;
+            padding: 0.75rem;
+            margin: 0.5rem 1rem;
+            border-radius: 0.375rem;
             font-weight: 500;
-            font-size: 0.95em;
+            font-size: 0.95rem;
             text-align: center;
-            position: relative;
-            animation: fadeIn 0.5s ease forwards;
         }
 
         .flash-message.success {
@@ -380,106 +341,121 @@
             color: inherit;
         }
 
-        .theme-toggle, .sound-toggle, .lang-toggle {
-            position: absolute;
-            top: 10px; /* Adjusted to top-left */
-            cursor: pointer;
-            font-size: 1.2em;
-            color: white;
-            transition: transform 0.3s ease;
-            z-index: 20; /* Ensure buttons are above other content */
+        .dashboard-footer {
+            text-align: center;
+            padding: 1.5rem;
+            margin-top: auto;
+            color: var(--text-muted-color);
+            font-size: 0.875rem;
+            background-color: var(--card-bg-color);
+            border-top: 1px solid var(--border-color);
         }
 
-        .theme-toggle { left: 20px; } /* Moved to left */
-        .sound-toggle { left: 60px; }
-        .lang-toggle { left: 100px; }
-
-        .theme-toggle:hover, .sound-toggle:hover, .lang-toggle:hover,
-        .theme-toggle:focus, .sound-toggle:focus, .lang-toggle:focus {
-            transform: scale(1.2);
-            outline: 2px solid var(--primary-color);
-            outline-offset: 2px;
+        @media (max-width: 1200px) {
+            .chat-sidebar {
+                flex: 0 0 240px;
+            }
         }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
-        @keyframes slideIn {
-            from { transform: translateY(20px); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-
-        @keyframes fadeInDown {
-            from { transform: translateY(-20px); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
-        }
-
-        @keyframes slideInMessage {
-            from { transform: translateX(-20px); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
-        }
-
-        /* Responsive Adjustments */
-        @media (max-width: 768px) {
-            .main-container {
+        @media (max-width: 992px) {
+            .chat-container {
                 flex-direction: column;
+            }
+            .chat-sidebar {
+                flex: 0 0 auto;
                 width: 100%;
-                height: 100vh;
-                border-radius: 0;
-                box-shadow: none;
-                max-width: none;
+                margin-bottom: 1.5rem;
+                position: static;
             }
-            .chat-wrapper {
-                min-width: unset;
-                border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+            .page-header { text-align: center; }
+        }
+        @media (max-width: 768px) {
+            .dashboard-navbar {
+                padding: 0.75rem 1rem;
             }
-            .online-users-sidebar {
-                width: 100%;
-                max-height: 200px;
-                border-top: 1px solid rgba(0, 0, 0, 0.1);
-                order: -1;
+            .dashboard-navbar .logo a { font-size: 1.25rem; }
+            .dashboard-navbar .nav-links ul {
+                display: none;
             }
-            #message-input-area {
-                padding: 10px;
-            }
-            .message-input-controls {
-                flex-direction: row;
-                align-items: center;
-            }
-            .message-input-controls input {
-                margin-bottom: 0;
-            }
-            .message-input-controls button {
-                padding: 12px 15px;
-            }
-            .theme-toggle { left: 15px; } /* Adjusted for mobile */
-            .sound-toggle { left: 55px; }
-            .lang-toggle { left: 95px; }
+            .chat-container { margin: 1rem auto; width: 90%; }
         }
 
-        @media (hover: none) {
-            .message-input-controls button:hover, .user-info a:hover,
-            #online-users-list li:hover, .theme-toggle:hover,
-            .sound-toggle:hover, .lang-toggle:hover {
-                transform: none;
-                box-shadow: none;
-            }
+        :root {
+            --primary-color-rgb: 0, 123, 255;
         }
+        [data-theme="dark"] {
+            --primary-color-rgb: 77, 171, 247;
+        }
+        .badge {
+            display: inline-block;
+            padding: .35em .65em;
+            font-size: .75em;
+            font-weight: 700;
+            line-height: 1;
+            color: #fff;
+            text-align: center;
+            white-space: nowrap;
+            vertical-align: baseline;
+            border-radius: .375rem;
+        }
+        .bg-danger { background-color: var(--danger-color) !important; }
+        .bg-info { background-color: var(--info-color) !important; }
+        .bg-warning { background-color: var(--warning-color) !important; }
+        .text-white { color: #fff !important; }
+        .ms-auto { margin-left: auto !important; }
     </style>
 </head>
-<body>
-    <div class="main-container">
-        <div class="chat-wrapper">
-            <i class="fas fa-moon theme-toggle" id="themeToggle" role="button" aria-label="Toggle theme" tabindex="0"></i>
-            <i class="fas fa-volume-up sound-toggle" id="soundToggle" role="button" aria-label="Toggle sound" tabindex="0"></i>
-            <i class="fas fa-globe lang-toggle" id="langToggle" role="button" aria-label="Toggle language" tabindex="0"></i>
-            <h2 data-i18n="chatTitle">Trò chuyện Thời gian thực!</h2>
+<body data-theme="light">
+    <nav class="dashboard-navbar">
+        <div class="logo">
+            <a href="{{ url_for('home') }}">ProjectAI</a>
+        </div>
+        <div class="nav-links">
+            <ul>
+                <li><a href="{{ url_for('home') }}"><i class="fas fa-home"></i> Trang chủ</a></li>
+                <li><a href="{{ url_for('chat_room') }}" class="active"><i class="fas fa-comments"></i> Phòng Chat</a></li>
+                {% if current_user.is_authenticated %}
+                    <li><a href="{{ url_for('dashboard') }}"><i class="fas fa-user-cog"></i> Dashboard</a></li>
+                    <li><a href="{{ url_for('logout') }}"><i class="fas fa-sign-out-alt"></i> Đăng xuất</a></li>
+                {% else %}
+                    <li><a href="{{ url_for('login') }}"><i class="fas fa-sign-in-alt"></i> Đăng nhập</a></li>
+                {% endif %}
+                <li><a href="#" id="theme-toggle-btn" title="Chuyển đổi giao diện"><i class="fas fa-adjust"></i></a></li>
+                <li><a href="#" id="lang-toggle-btn" title="Chuyển đổi ngôn ngữ"><i class="fas fa-globe"></i></a></li>
+                <li><a href="#" id="sound-toggle-btn" title="Bật/tắt âm thanh"><i class="fas fa-volume-up"></i></a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="chat-container">
+        <aside class="chat-sidebar">
+            <h2 data-i18n="conversations">Cuộc trò chuyện</h2>
+            <ul class="conversation-list">
+                {% if conversations %}
+                    {% for convo in conversations %}
+                        <li><a href="{{ url_for('view_conversation', conversation_id=convo.id) }}"
+                               class="{{ 'active' if active_conversation and active_conversation.id == convo.id else '' }}">
+                            <i class="fas {{ 'fa-user' if not convo.is_group else 'fa-users' }}"></i>
+                            {{ convo.name or convo.members.filter(ConversationMember.user_id != current_user.id).first().user.username }}
+                        </a></li>
+                    {% endfor %}
+                {% else %}
+                    <li><p data-i18n="noConversations">Chưa có cuộc trò chuyện nào.</p></li>
+                {% endif %}
+                <li><a href="{{ url_for('create_group_chat') }}"><i class="fas fa-plus"></i> Tạo nhóm mới</a></li>
+            </ul>
+        </aside>
+
+        <main class="chat-main-content">
+            <div class="page-header">
+                <h1 data-i18n="chatTitle">Trò chuyện</h1>
+                <p data-i18n="chatDescription">
+                    {% if active_conversation %}
+                        Đang trò chuyện trong {{ active_conversation.name or 'cuộc trò chuyện riêng' }}
+                    {% else %}
+                        Chọn một cuộc trò chuyện để bắt đầu!
+                    {% endif %}
+                </p>
+            </div>
             {% with messages = get_flashed_messages(with_categories=true) %}
                 {% if messages %}
                     <ul class="flash-messages">
@@ -489,282 +465,217 @@
                     </ul>
                 {% endif %}
             {% endwith %}
-            <div class="user-info">
-                {% if current_user.is_authenticated %}
-                    <span data-i18n="welcome">Chào mừng, <strong>{{ current_user.username }}</strong>!</span>
-                    <a href="{{ url_for('logout') }}" data-i18n="logout">Đăng xuất</a>
-                {% else %}
-                    <span data-i18n="notLoggedIn">Bạn chưa đăng nhập.</span>
-                    <a href="{{ url_for('login') }}" data-i18n="login">Đăng nhập</a>
+            <div class="chat-area" id="chat-container">
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="message-row {{ 'sent' if message.sender_id == current_user.id else 'received' }}">
+                            <span class="username">{{ message.sender.username }}</span>
+                            <span class="message-content">{{ message.content }}</span>
+                            <div class="message-meta">
+                                {{ message.timestamp.strftime('%H:%M %d/%m/%Y') }}
+                                {% if message.is_read and message.sender_id == current_user.id %}
+                                    <i class="fas fa-check-double" title="Đã đọc"></i>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% endfor %}
                 {% endif %}
             </div>
-            <div id="chat-container"></div>
-            <div id="message-input-area">
-                <div class="recipient-select-area">
-                    <label for="recipient-select" data-i18n="recipient">Gửi đến:</label>
-                    <select id="recipient-select">
-                        <option value="all" data-i18n="allUsers">Tất cả mọi người</option>
-                    </select>
-                </div>
-                <div class="message-input-controls">
-                    <input type="text" id="message-input" required maxlength="500">
-                    <label for="message-input" data-i18n="messagePlaceholder">Nhập tin nhắn...</label>
-                    <span class="error" data-i18n="messageError">Tin nhắn không được để trống và tối đa 500 ký tự</span>
-                    <button onclick="sendMessage()" data-i18n="send" aria-label="Send message">Gửi</button>
-                </div>
+            <div class="typing-indicator" id="typing-indicator"></div>
+            <div class="message-input-area">
+                <input type="text" id="message-input" maxlength="500" placeholder="Nhập tin nhắn..." {% if not active_conversation %}disabled{% endif %}>
+                <button id="send-button" {% if not active_conversation %}disabled{% endif %} data-i18n="send">Gửi</button>
             </div>
-        </div>
-        <div class="online-users-sidebar">
-            <h3 data-i18n="onlineUsers">Người dùng trực tuyến</h3>
-            <ul id="online-users-list"></ul>
-        </div>
+        </main>
     </div>
 
+    <footer class="dashboard-footer">
+        <p>© <script>document.write(new Date().getFullYear())</script> ProjectAI. Bảo lưu mọi quyền.</p>
+    </footer>
+
     <script>
-        // Sound effect (base64-encoded WAV for a subtle click)
+        // Sound effect
         const clickSound = new Audio('data:audio/wav;base64,UklGRiYAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=');
 
         // Translations
         const translations = {
             vi: {
-                chatTitle: 'Trò chuyện Thời gian thực',
-                welcome: 'Chào mừng',
-                logout: 'Đăng xuất',
-                notLoggedIn: 'Bạn chưa đăng nhập.',
-                login: 'Đăng nhập',
-                recipient: 'Gửi đến:',
-                allUsers: 'Tất cả mọi người',
-                messagePlaceholder: 'Nhập tin nhắn...',
-                messageError: 'Tin nhắn không được để trống và tối đa 500 ký tự',
+                chatTitle: 'Trò chuyện - ProjectAI Chat',
+                conversations: 'Cuộc trò chuyện',
+                noConversations: 'Chưa có cuộc trò chuyện nào.',
+                chatDescription: 'Chọn một cuộc trò chuyện để bắt đầu!',
                 send: 'Gửi',
-                onlineUsers: 'Người dùng trực tuyến'
+                typing: 'đang nhập...'
             },
             en: {
-                chatTitle: 'Real-Time Chat',
-                welcome: 'Welcome',
-                logout: 'Logout',
-                notLoggedIn: 'You are not logged in.',
-                login: 'Login',
-                recipient: 'Send to:',
-                allUsers: 'Everyone',
-                messagePlaceholder: 'Type a message...',
-                messageError: 'Message cannot be empty and max 500 characters',
+                chatTitle: 'Chat - ProjectAI Chat',
+                conversations: 'Conversations',
+                noConversations: 'No conversations yet.',
+                chatDescription: 'Select a conversation to start!',
                 send: 'Send',
-                onlineUsers: 'Online Users'
+                typing: 'is typing...'
             }
         };
 
         // Load preferences
-        const savedTheme = localStorage.getItem('theme') || 'light';
-        const savedSound = localStorage.getItem('sound') !== 'false';
+        let savedTheme = localStorage.getItem('theme') || 'light';
+        let savedSound = localStorage.getItem('sound') !== 'false';
         let savedLang = localStorage.getItem('lang') || 'vi';
         document.body.dataset.theme = savedTheme;
         let soundEnabled = savedSound;
 
-        // Update language
         function updateLanguage(lang) {
             document.querySelectorAll('[data-i18n]').forEach(el => {
                 const key = el.dataset.i18n;
-                if (el.tagName === 'INPUT') {
-                    const label = el.nextElementSibling;
-                    if (label && label.tagName === 'LABEL') {
-                        label.textContent = translations[lang][key] || label.textContent;
-                    }
-                } else if (el.tagName === 'OPTION') {
-                    el.textContent = translations[lang][key] || el.textContent;
-                } else {
-                    el.textContent = translations[lang][key] || el.textContent;
+                if (translations[lang][key]) {
+                    el.textContent = translations[lang][key];
+                }
+                if (key === 'chatTitle') {
+                    document.title = translations[lang][key];
                 }
             });
-            document.title = translations[lang].chatTitle;
             localStorage.setItem('lang', lang);
             savedLang = lang;
         }
 
-        // Initialize Socket.IO
-        const socket = io();
-        const chatContainer = document.getElementById('chat-container');
-        const messageInput = document.getElementById('message-input');
-        const sendButton = document.querySelector('.message-input-controls button');
-        const onlineUsersList = document.getElementById('online-users-list');
-        const recipientSelect = document.getElementById('recipient-select');
+        document.addEventListener('DOMContentLoaded', () => {
+            const themeToggleButton = document.getElementById('theme-toggle-btn');
+            const soundToggleButton = document.getElementById('sound-toggle-btn');
+            const langToggleButton = document.getElementById('lang-toggle-btn');
 
-        // Theme toggle
-        const themeToggle = document.getElementById('themeToggle');
-        themeToggle.classList.toggle('fa-moon', savedTheme === 'light');
-        themeToggle.classList.toggle('fa-sun', savedTheme === 'dark');
-        themeToggle.addEventListener('click', () => {
-            document.body.dataset.theme = document.body.dataset.theme === 'dark' ? 'light' : 'dark';
-            themeToggle.classList.toggle('fa-moon');
-            themeToggle.classList.toggle('fa-sun');
-            localStorage.setItem('theme', document.body.dataset.theme);
-            if (soundEnabled) clickSound.play();
-        });
-        themeToggle.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
-                themeToggle.click();
+            if (themeToggleButton) {
+                const icon = themeToggleButton.querySelector('i');
+                const applyTheme = (theme) => {
+                    document.body.dataset.theme = theme;
+                    localStorage.setItem('theme', theme);
+                    if (theme === 'dark') {
+                        icon.classList.remove('fa-adjust');
+                        icon.classList.add('fa-sun');
+                    } else {
+                        icon.classList.remove('fa-sun');
+                        icon.classList.add('fa-adjust');
+                    }
+                };
+
+                applyTheme(savedTheme);
+
+                themeToggleButton.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    savedTheme = document.body.dataset.theme === 'dark' ? 'light' : 'dark';
+                    applyTheme(savedTheme);
+                    if (soundEnabled) clickSound.play();
+                });
             }
-        });
 
-        // Sound toggle
-        const soundToggle = document.getElementById('soundToggle');
-        soundToggle.classList.toggle('fa-volume-up', soundEnabled);
-        soundToggle.classList.toggle('fa-volume-mute', !soundEnabled);
-        soundToggle.addEventListener('click', () => {
-            soundEnabled = !soundEnabled;
-            soundToggle.classList.toggle('fa-volume-up');
-            soundToggle.classList.toggle('fa-volume-mute');
-            localStorage.setItem('sound', soundEnabled);
-            if (soundEnabled) clickSound.play();
-        });
-        soundToggle.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
-                soundToggle.click();
+            if (soundToggleButton) {
+                soundToggleButton.querySelector('i').classList.toggle('fa-volume-up', soundEnabled);
+                soundToggleButton.querySelector('i').classList.toggle('fa-volume-mute', !soundEnabled);
+
+                soundToggleButton.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    soundEnabled = !soundEnabled;
+                    soundToggleButton.querySelector('i').classList.toggle('fa-volume-up');
+                    soundToggleButton.querySelector('i').classList.toggle('fa-volume-mute');
+                    localStorage.setItem('sound', soundEnabled);
+                    if (soundEnabled) clickSound.play();
+                });
             }
-        });
 
-        // Language toggle
-        const langToggle = document.getElementById('langToggle');
-        updateLanguage(savedLang);
-        langToggle.addEventListener('click', () => {
-            const newLang = savedLang === 'vi' ? 'en' : 'vi';
-            updateLanguage(newLang);
-            if (soundEnabled) clickSound.play();
-        });
-        langToggle.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
-                langToggle.click();
+            if (langToggleButton) {
+                updateLanguage(savedLang);
+
+                langToggleButton.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const newLang = savedLang === 'vi' ? 'en' : 'vi';
+                    updateLanguage(newLang);
+                    if (soundEnabled) clickSound.play();
+                });
             }
-        });
 
-        // Update online users list and recipient dropdown
-        function updateOnlineUsersDisplay(userList) {
-            onlineUsersList.innerHTML = '';
-            const currentRecipient = recipientSelect.value;
-            recipientSelect.innerHTML = `<option value="all" data-i18n="allUsers">${translations[savedLang].allUsers}</option>`;
-            const loggedInUsername = "{{ current_user.username if current_user.is_authenticated else '' }}";
+            // Initialize Socket.IO
+            const socket = io();
+            const chatContainer = document.getElementById('chat-container');
+            const messageInput = document.getElementById('message-input');
+            const sendButton = document.getElementById('send-button');
+            const typingIndicator = document.getElementById('typing-indicator');
+            const conversationId = {{ active_conversation.id if active_conversation else 'null' }};
 
-            userList.forEach((username, index) => {
-                if (username !== loggedInUsername) {
-                    // Add to sidebar
-                    const listItem = document.createElement('li');
-                    listItem.textContent = username;
-                    listItem.dataset.username = username;
-                    listItem.tabIndex = 0;
-                    listItem.onclick = function() {
-                        recipientSelect.value = username;
-                        Array.from(onlineUsersList.children).forEach(item => item.classList.remove('selected'));
-                        listItem.classList.add('selected');
-                        gtag('event', 'select_recipient', { recipient: username });
-                        if (soundEnabled) clickSound.play();
-                    };
-                    listItem.onkeydown = function(e) {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                            listItem.click();
-                        }
-                    };
-                    onlineUsersList.appendChild(listItem);
+            function sendMessage() {
+                const content = messageInput.value.trim();
+                if (!content || content.length > 500 || !conversationId) {
+                    alert(translations[savedLang].messageError || 'Tin nhắn không hợp lệ hoặc chưa chọn cuộc trò chuyện!');
+                    return;
+                }
 
-                    // Add to dropdown
-                    const option = document.createElement('option');
-                    option.value = username;
-                    option.textContent = username;
-                    recipientSelect.appendChild(option);
+                sendButton.disabled = true;
+                socket.emit('message', { conversation_id: conversationId, content: content }, () => {
+                    messageInput.value = '';
+                    sendButton.disabled = false;
+                    if (soundEnabled) clickSound.play();
+                    gtag('event', 'send_message', { conversation_id: conversationId });
+                });
+            }
+
+            socket.on('message', (data) => {
+                if (data.conversation_id === conversationId) {
+                    const messageRow = document.createElement('div');
+                    messageRow.classList.add('message-row', data.sender === "{{ current_user.username }}" ? 'sent' : 'received');
+                    messageRow.innerHTML = `
+                        <span class="username">${data.sender}</span>
+                        <span class="message-content">${data.content}</span>
+                        <div class="message-meta">
+                            ${new Date(data.timestamp).toLocaleString('vi-VN')}
+                            ${data.is_read && data.sender === "{{ current_user.username }}" ? '<i class="fas fa-check-double" title="Đã đọc"></i>' : ''}
+                        </div>
+                    `;
+                    chatContainer.appendChild(messageRow);
+                    chatContainer.scrollTop = chatContainer.scrollHeight;
+                    if (soundEnabled && data.sender !== "{{ current_user.username }}") clickSound.play();
+
+                    // Mark message as read
+                    socket.emit('read_message', { message_id: data.id });
                 }
             });
 
-            if (Array.from(recipientSelect.options).some(opt => opt.value === currentRecipient)) {
-                recipientSelect.value = currentRecipient;
-            } else {
-                recipientSelect.value = 'all';
-            }
-        }
+            socket.on('typing', (data) => {
+                if (data.conversation_id === conversationId && data.username !== "{{ current_user.username }}") {
+                    typingIndicator.textContent = `${data.username} ${translations[savedLang].typing}`;
+                    typingIndicator.style.display = 'block';
+                    setTimeout(() => { typingIndicator.style.display = 'none'; }, 2000);
+                }
+            });
 
-        // Socket.IO events
-        socket.on('update_user_list', function(userList) {
-            updateOnlineUsersDisplay(userList);
-        });
-
-        socket.on('message', function(data) {
-            const messageRow = document.createElement('div');
-            messageRow.classList.add('message-row');
-            const loggedInUsername = "{{ current_user.username if current_user.is_authenticated else '' }}";
-
-            if (data.username === loggedInUsername) {
-                messageRow.classList.add('sent');
-            } else {
-                messageRow.classList.add('received');
-            }
-            if (data.private) {
-                messageRow.classList.add('private');
-            }
-
-            const usernameSpan = document.createElement('span');
-            usernameSpan.classList.add('username');
-            usernameSpan.textContent = data.username + ": ";
-
-            const messageContentSpan = document.createElement('span');
-            messageContentSpan.classList.add('message-content');
-            messageContentSpan.textContent = data.message;
-
-            messageRow.appendChild(usernameSpan);
-            messageRow.appendChild(messageContentSpan);
-
-            chatContainer.appendChild(messageRow);
-            setTimeout(() => {
-                chatContainer.scrollTo({
-                    top: chatContainer.scrollHeight,
-                    behavior: 'smooth'
+            socket.on('message_read', (data) => {
+                const messageRows = chatContainer.querySelectorAll('.message-row.sent');
+                messageRows.forEach(row => {
+                    if (row.dataset.messageId == data.message_id) {
+                        row.querySelector('.message-meta').innerHTML += '<i class="fas fa-check-double" title="Đã đọc"></i>';
+                    }
                 });
-            }, 100);
-            if (soundEnabled && data.username !== loggedInUsername) clickSound.play();
-        });
-
-        // Send message function
-        function sendMessage() {
-            const message = messageInput.value.trim();
-            if (message === "" || message.length > 500) {
-                messageInput.setCustomValidity(translations[savedLang].messageError);
-                messageInput.reportValidity();
-                return;
-            }
-
-            sendButton.classList.add('sending');
-            sendButton.disabled = true;
-
-            const recipient = recipientSelect.value;
-            socket.emit('message', { message: message, recipient: recipient }, () => {
-                messageInput.value = "";
-                messageInput.setCustomValidity("");
-                messageInput.focus();
-                sendButton.classList.remove('sending');
-                sendButton.disabled = false;
-                gtag('event', 'send_message', { recipient: recipient });
-                if (soundEnabled) clickSound.play();
             });
-        }
 
-        // Event listeners
-        messageInput.addEventListener("keypress", function(e) {
-            if (e.key === "Enter") {
-                sendMessage();
-            }
-        });
-
-        messageInput.addEventListener('input', () => {
-            messageInput.setCustomValidity(
-                messageInput.value.trim() === "" || messageInput.value.length > 500
-                    ? translations[savedLang].messageError
-                    : ''
-            );
-        });
-
-        recipientSelect.addEventListener('change', () => {
-            const selectedUsername = recipientSelect.value;
-            Array.from(onlineUsersList.children).forEach(item => {
-                item.classList.toggle('selected', item.dataset.username === selectedUsername);
+            socket.on('error', (data) => {
+                alert(data.message);
             });
-            if (soundEnabled) clickSound.play();
+
+            let typingTimeout;
+            messageInput.addEventListener('input', () => {
+                if (conversationId) {
+                    socket.emit('typing', { conversation_id: conversationId });
+                    clearTimeout(typingTimeout);
+                    typingTimeout = setTimeout(() => {
+                        socket.emit('typing', { conversation_id: conversationId });
+                    }, 1000);
+                }
+            });
+
+            messageInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    sendMessage();
+                }
+            });
+
+            sendButton.addEventListener('click', sendMessage);
         });
     </script>
 </body>

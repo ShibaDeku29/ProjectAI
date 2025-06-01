@@ -1,12 +1,13 @@
 import os
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
-from flask_socketio import SocketIO
+from flask_socketio import SocketIO, join_room, leave_room
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
-from sqlalchemy import MetaData
+from sqlalchemy import MetaData, or_, and_, func
+from sqlalchemy.exc import IntegrityError
 
 from config import Config
 from events import register_events
@@ -57,6 +58,7 @@ class User(UserMixin, db.Model):
     activities = db.relationship('UserActivity', backref='actor_user', lazy='dynamic', foreign_keys='UserActivity.user_id')
     friendships_a = db.relationship('Friendship', foreign_keys='Friendship.user_a_id', backref='user_a', lazy='dynamic')
     friendships_b = db.relationship('Friendship', foreign_keys='Friendship.user_b_id', backref='user_b', lazy='dynamic')
+    conversation_members = db.relationship('ConversationMember', backref='user', lazy='dynamic')
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
@@ -71,26 +73,47 @@ class User(UserMixin, db.Model):
     def __repr__(self):
         return f'<User {self.username}>'
 
+class Conversation(db.Model):
+    __tablename__ = 'conversation'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=True)  # Null for private chats, name for group chats
+    is_group = db.Column(db.Boolean, default=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    messages = db.relationship('Message', backref='conversation', lazy='dynamic')
+    members = db.relationship('ConversationMember', backref='conversation', lazy='dynamic')
+
+    def __repr__(self):
+        return f'<Conversation {self.id} {"Group" if self.is_group else "Private"}>'
+
+class ConversationMember(db.Model):
+    __tablename__ = 'conversation_member'
+    conversation_id = db.Column(db.Integer, db.ForeignKey('conversation.id', name='fk_conversation_member_conversation_id'), primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id', name='fk_conversation_member_user_id'), primary_key=True)
+    joined_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def __repr__(self):
+        return f'<ConversationMember User {self.user_id} in Conversation {self.conversation_id}>'
+
 class Message(db.Model):
     __tablename__ = 'message'
     id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(80), nullable=False)
-    message_content = db.Column(db.Text, nullable=False)
+    conversation_id = db.Column(db.Integer, db.ForeignKey('conversation.id', name='fk_message_conversation_id'), nullable=False, index=True)
+    sender_id = db.Column(db.Integer, db.ForeignKey('user.id', name='fk_message_sender_id'), nullable=False)
+    content = db.Column(db.Text, nullable=False)
     timestamp = db.Column(db.DateTime, default=datetime.utcnow, index=True)
-    is_private = db.Column(db.Boolean, default=False)
-    recipient_username = db.Column(db.String(80), nullable=True)
+    is_read = db.Column(db.Boolean, default=False)
 
-    def __repr__(self):
-        return f'<Message ID {self.id} from {self.username}>'
+    sender = db.relationship('User', backref='sent_messages', foreign_keys=[sender_id])
 
     def to_dict(self):
         return {
             'id': self.id,
-            'username': self.username,
-            'message': self.message_content,
+            'conversation_id': self.conversation_id,
+            'sender': self.sender.username,
+            'content': self.content,
             'timestamp': self.timestamp.isoformat(),
-            'private': self.is_private,
-            'recipient': self.recipient_username
+            'is_read': self.is_read
         }
 
 class Friendship(db.Model):
@@ -157,7 +180,130 @@ def home():
 @app.route('/chat')
 @login_required
 def chat_room():
-    return render_template('index.html')
+    conversations = Conversation.query.join(ConversationMember).filter(
+        ConversationMember.user_id == current_user.id
+    ).order_by(Conversation.created_at.desc()).all()
+    return render_template('index.html', conversations=conversations)
+
+@app.route('/chat/conversation/<int:conversation_id>')
+@login_required
+def view_conversation(conversation_id):
+    conversation = Conversation.query.get_or_404(conversation_id)
+    if not ConversationMember.query.filter_by(conversation_id=conversation_id, user_id=current_user.id).first():
+        flash('Bạn không có quyền truy cập cuộc trò chuyện này!', 'danger')
+        return redirect(url_for('chat_room'))
+    messages = Message.query.filter_by(conversation_id=conversation_id).order_by(Message.timestamp.asc()).limit(50).all()
+    conversations = Conversation.query.join(ConversationMember).filter(
+        ConversationMember.user_id == current_user.id
+    ).order_by(Conversation.created_at.desc()).all()
+    return render_template('index.html', conversations=conversations, active_conversation=conversation, messages=messages)
+
+@app.route('/chat/new/private/<string:username>', methods=['POST'])
+@login_required
+def create_private_chat(username):
+    target_user = User.query.filter_by(username=username).first()
+    if not target_user:
+        flash('Người dùng không tồn tại!', 'danger')
+        return redirect(url_for('chat_room'))
+    if target_user.id == current_user.id:
+        flash('Không thể trò chuyện với chính mình!', 'danger')
+        return redirect(url_for('chat_room'))
+
+    # Check if users are friends
+    friendship = Friendship.query.filter(
+        or_(
+            and_(Friendship.user_a_id == current_user.id, Friendship.user_b_id == target_user.id),
+            and_(Friendship.user_a_id == target_user.id, Friendship.user_b_id == current_user.id)
+        ),
+        Friendship.status == 'friends'
+    ).first()
+    if not friendship:
+        flash('Bạn chỉ có thể trò chuyện với bạn bè!', 'danger')
+        return redirect(url_for('chat_room'))
+
+    # Check for existing private conversation
+    existing_convo = Conversation.query.join(ConversationMember).filter(
+        Conversation.is_group == False,
+        ConversationMember.user_id.in_([current_user.id, target_user.id])
+    ).group_by(Conversation.id).having(func.count(ConversationMember.user_id) == 2).first()
+
+    if existing_convo:
+        return redirect(url_for('view_conversation', conversation_id=existing_convo.id))
+
+    conversation = Conversation(is_group=False)
+    db.session.add(conversation)
+    db.session.flush()
+
+    member1 = ConversationMember(conversation_id=conversation.id, user_id=current_user.id)
+    member2 = ConversationMember(conversation_id=conversation.id, user_id=target_user.id)
+    db.session.add_all([member1, member2])
+
+    try:
+        db.session.commit()
+        flash('Đã tạo cuộc trò chuyện riêng!', 'success')
+        return redirect(url_for('view_conversation', conversation_id=conversation.id))
+    except IntegrityError:
+        db.session.rollback()
+        flash('Lỗi khi tạo cuộc trò chuyện: Cuộc trò chuyện đã tồn tại!', 'danger')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Lỗi khi tạo cuộc trò chuyện: {str(e)}', 'danger')
+    return redirect(url_for('chat_room'))
+
+@app.route('/chat/new/group', methods=['GET', 'POST'])
+@login_required
+def create_group_chat():
+    if request.method == 'POST':
+        name = request.form.get('name', '').strip()
+        member_usernames = request.form.getlist('members')
+
+        if not name:
+            flash('Tên nhóm là bắt buộc!', 'danger')
+            return redirect(url_for('create_group_chat'))
+
+        members = [current_user]
+        for username in member_usernames:
+            user = User.query.filter_by(username=username).first()
+            if user and user.id != current_user.id:
+                # Verify friendship
+                friendship = Friendship.query.filter(
+                    or_(
+                        and_(Friendship.user_a_id == current_user.id, Friendship.user_b_id == user.id),
+                        and_(Friendship.user_a_id == user.id, Friendship.user_b_id == current_user.id)
+                    ),
+                    Friendship.status == 'friends'
+                ).first()
+                if friendship:
+                    members.append(user)
+
+        if len(members) < 2:
+            flash('Nhóm phải có ít nhất 2 thành viên là bạn bè!', 'danger')
+            return redirect(url_for('create_group_chat'))
+
+        conversation = Conversation(name=name, is_group=True)
+        db.session.add(conversation)
+        db.session.flush()
+
+        for member in members:
+            db.session.add(ConversationMember(conversation_id=conversation.id, user_id=member.id))
+
+        try:
+            db.session.commit()
+            flash('Tạo nhóm thành công!', 'success')
+            return redirect(url_for('view_conversation', conversation_id=conversation.id))
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Lỗi khi tạo nhóm: {str(e)}', 'danger')
+
+    friends = Friendship.query.filter(
+        or_(
+            Friendship.user_a_id == current_user.id,
+            Friendship.user_b_id == current_user.id
+        ),
+        Friendship.status == 'friends'
+    ).all()
+    friend_users = [f.user_b if f.user_a_id == current_user.id else f.user_a for f in friends]
+    return render_template('create_group.html', friends=friend_users)
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
@@ -195,7 +341,7 @@ def register():
                 return redirect(url_for('login'))
             except Exception as e:
                 db.session.rollback()
-                flash(f'Đã xảy ra lỗi khi đăng ký: {e}', 'danger')
+                flash(f'Đã xảy ra lỗi khi đăng ký: {str(e)}', 'danger')
     return render_template('register.html')
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -233,7 +379,11 @@ def logout():
 @app.route('/dashboard')
 @login_required
 def dashboard():
-    public_message_count = Message.query.filter_by(username=current_user.username, is_private=False).count()
+    public_message_count = Message.query.join(Conversation).join(ConversationMember).filter(
+        Conversation.is_group == False,
+        ConversationMember.user_id == current_user.id,
+        Message.sender_id == current_user.id
+    ).count()
     recent_activities = UserActivity.query.filter_by(user_id=current_user.id).order_by(UserActivity.timestamp.desc()).limit(5).all()
     unread_notifications_count = Notification.query.filter_by(user_id=current_user.id, is_read=False).count()
     friend_requests = Friendship.query.filter_by(user_b_id=current_user.id, status='pending_a_to_b').count()
@@ -270,7 +420,7 @@ def edit_profile():
             return redirect(url_for('dashboard'))
         except Exception as e:
             db.session.rollback()
-            flash(f'Lỗi khi cập nhật hồ sơ: {e}', 'danger')
+            flash(f'Lỗi khi cập nhật hồ sơ: {str(e)}', 'danger')
     return render_template('edit_profile.html', full_name=current_user.full_name, email=current_user.email, bio=current_user.bio, avatar_url=current_user.avatar_url)
 
 @app.route('/notifications')
@@ -294,8 +444,11 @@ def mark_notification_read(notification_id):
 def friends():
     friend_requests = Friendship.query.filter_by(user_b_id=current_user.id, status='pending_a_to_b').all()
     friends = Friendship.query.filter(
-        ((Friendship.user_a_id == current_user.id) | (Friendship.user_b_id == current_user.id)) & 
-        (Friendship.status == 'friends')
+        or_(
+            Friendship.user_a_id == current_user.id,
+            Friendship.user_b_id == current_user.id
+        ),
+        Friendship.status == 'friends'
     ).all()
     return render_template('friends.html', friend_requests=friend_requests, friends=friends)
 
@@ -328,7 +481,7 @@ def send_friend_request(username):
         flash('Gửi lời mời kết bạn thành công!', 'success')
     except Exception as e:
         db.session.rollback()
-        flash(f'Lỗi khi gửi lời mời: {e}', 'danger')
+        flash(f'Lỗi khi gửi lời mời: {str(e)}', 'danger')
     return redirect(url_for('friends'))
 
 @app.route('/friends/accept/<int:user_id>', methods=['POST'])
@@ -352,7 +505,7 @@ def accept_friend_request(user_id):
         flash('Đã chấp nhận lời mời kết bạn!', 'success')
     except Exception as e:
         db.session.rollback()
-        flash(f'Lỗi khi chấp nhận lời mời: {e}', 'danger')
+        flash(f'Lỗi khi chấp nhận lời mời: {str(e)}', 'danger')
     return redirect(url_for('friends'))
 
 @app.route('/settings', methods=['GET', 'POST'])
@@ -368,7 +521,7 @@ def settings():
                 return redirect(url_for('settings'))
             except Exception as e:
                 db.session.rollback()
-                flash(f'Lỗi khi đổi mật khẩu: {e}', 'danger')
+                flash(f'Lỗi khi đổi mật khẩu: {str(e)}', 'danger')
     return render_template('settings.html')
 
 @app.route('/security')

@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title data-i18n="createGroupTitle">Tạo Nhóm - ProjectAI Chat</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #007bff;
+            --secondary-color: #28a745;
+            --text-color: #343a40;
+            --text-muted-color: #6c757d;
+            --bg-color: #f8f9fa;
+            --card-bg-color: #ffffff;
+            --border-color: #dee2e6;
+            --shadow-sm: 0 .125rem .25rem rgba(0,0,0,.075);
+            --navbar-bg: #343a40;
+            --navbar-link-color: rgba(255, 255, 255, 0.8);
+            --navbar-link-hover-color: #ffffff;
+            --danger-color: #dc3545;
+        }
+
+        [data-theme="dark"] {
+            --primary-color: #4dabf7;
+            --secondary-color: #40c057;
+            --text-color: #e9ecef;
+            --text-muted-color: #adb5bd;
+            --bg-color: #121212;
+            --card-bg-color: #1e1e1e;
+            --border-color: #343a40;
+            --navbar-bg: #212529;
+        }
+
+        *, *::before, *::after {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            font-size: 16px;
+        }
+
+        .dashboard-navbar {
+            background-color: var(--navbar-bg);
+            padding: 0.75rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: var(--shadow-sm);
+            position: sticky;
+            top: 0;
+            z-index: 1020;
+        }
+
+        .dashboard-navbar .logo a {
+            color: var(--navbar-link-hover-color);
+            text-decoration: none;
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .dashboard-navbar .nav-links ul {
+            list-style: none;
+            display: flex;
+            align-items: center;
+        }
+
+        .dashboard-navbar .nav-links ul li {
+            margin-left: 1.25rem;
+        }
+
+        .dashboard-navbar .nav-links ul li a {
+            color: var(--navbar-link-color);
+            text-decoration: none;
+            padding: 0.5rem 0.75rem;
+            border-radius: 0.25rem;
+            transition: color 0.2s ease, background-color 0.2s ease;
+            font-weight: 500;
+            font-size: 0.95rem;
+        }
+        .dashboard-navbar .nav-links ul li a i {
+            margin-right: 0.4rem;
+        }
+
+        .dashboard-navbar .nav-links ul li a:hover,
+        .dashboard-navbar .nav-links ul li a.active {
+            color: var(--navbar-link-hover-color);
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 2rem auto;
+            padding: 1.5rem;
+            background-color: var(--card-bg-color);
+            border-radius: 0.5rem;
+            box-shadow: var(--shadow-sm);
+        }
+
+        h1 {
+            font-size: 1.75rem;
+            color: var(--text-color);
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: 500;
+            color: var(--text-color);
+            margin-bottom: 0.5rem;
+        }
+
+        .form-group input, .form-group select[multiple] {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--border-color);
+            border-radius: 0.375rem;
+            font-size: 0.95rem;
+            background: var(--card-bg-color);
+        }
+
+        .form-group select[multiple] {
+            height: 150px;
+        }
+
+        button {
+            width: 100%;
+            padding: 0.75rem;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 0.375rem;
+            font-size: 0.95rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background: #0056b3;
+        }
+
+        .flash-message {
+            padding: 0.75rem;
+            margin-bottom: 1rem;
+            border-radius: 0.375rem;
+            font-weight: 500;
+            font-size: 0.95rem;
+            text-align: center;
+        }
+
+        .flash-message.success {
+            background-color: #e6f4ea;
+            color: #1a4731;
+            border: 1px solid #c3e6cb;
+        }
+
+        .flash-message.danger {
+            background-color: #fce8e6;
+            color: #5c1c1a;
+            border: 1px solid #f5c6cb;
+        }
+
+        .links {
+            text-align: center;
+            margin-top: 1rem;
+        }
+
+        .links a {
+            color: var(--primary-color);
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .links a:hover {
+            text-decoration: underline;
+        }
+
+        .dashboard-footer {
+            text-align: center;
+            padding: 1.5rem;
+            margin-top: auto;
+            color: var(--text-muted-color);
+            font-size: 0.875rem;
+            background-color: var(--card-bg-color);
+            border-top: 1px solid var(--border-color);
+        }
+    </style>
+</head>
+<body>
+    <nav class="dashboard-navbar">
+        <div class="logo">
+            <a href="{{ url_for('home') }}">ProjectAI</a>
+        </div>
+        <div class="nav-links">
+            <ul>
+                <li><a href="{{ url_for('home') }}"><i class="fas fa-home"></i> Trang chủ</a></li>
+                <li><a href="{{ url_for('chat_room') }}" class="active"><i class="fas fa-comments"></i> Phòng Chat</a></li>
+                <li><a href="{{ url_for('dashboard') }}"><i class="fas fa-user-cog"></i> Dashboard</a></li>
+                <li><a href="{{ url_for('logout') }}"><i class="fas fa-sign-out-alt"></i> Đăng xuất</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container">
+        <h1>Tạo Nhóm Mới</h1>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <ul class="flash-messages">
+                {% for category, message in messages %}
+                    <li class="flash-message {{ category }}">{{ message }}</li>
+                {% endfor %}
+                </ul>
+            {% endif %}
+        {% endwith %}
+        <form method="POST">
+            <div class="form-group">
+                <label for="name">Tên nhóm:</label>
+                <input type="text" id="name" name="name" required>
+            </div>
+            <div class="form-group">
+                <label for="members">Thành viên:</label>
+                <select id="members" name="members" multiple>
+                    {% for friend in friends %}
+                        <option value="{{ friend.username }}">{{ friend.username }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <button type="submit">Tạo Nhóm</button>
+        </form>
+        <div class="links">
+            <a href="{{ url_for('chat_room') }}">Quay lại Trò chuyện</a>
+        </div>
+    </div>
+
+    <footer class="dashboard-footer">
+        <p>© <script>document.write(new Date().getFullYear())</script> ProjectAI. Bảo lưu mọi quyền.</p>
+    </footer>
+</body>
+</html>

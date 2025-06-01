@@ -1,19 +1,92 @@
 from flask import request
-from flask_socketio import emit
-from sqlalchemy import desc
+from flask_socketio import SocketIO, emit, join_room
+from sqlalchemy import or_
+from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 from datetime import datetime
+import logging
 
-# Global dictionary to store active users: {username: session_id}
-active_users_sid_map = {}
+# Set up logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
-# Helper function to broadcast the list of online users
-def emit_active_users_list():
-    user_list = sorted(list(active_users_sid_map.keys()))
-    emit('update_user_list', user_list, broadcast=True)
+# Global dictionary to store active user sessions: {username: session_id}
+user_sessions = {}
 
-# Register Socket.IO event handlers
-def register_events(socketio, db, current_user):
-    from app import Message, User  # Import models here to avoid circular imports
+def emit_online_friends(socketio: SocketIO, db, user_id: int):
+    """Broadcast the list of online friends to the user."""
+    try:
+        # Optimized query using join to fetch friends
+        friends = db.session.query(User.username).join(
+            Friendship, or_(
+                Friendship.user_a_id == User.id,
+                Friendship.user_b_id == User.id
+            )
+        ).filter(
+            or_(
+                Friendship.user_a_id == user_id,
+                Friendship.user_b_id == user_id
+            ),
+            Friendship.status == 'friends'
+        ).all()
+        online_friends = [f.username for f in friends if f.username in user_sessions]
+        username = db.session.query(User).filter_by(id=user_id).first().username
+        emit('update_user_list', sorted(online_friends), room=user_sessions.get(username))
+        logger.info(f"Emitted online friends list to user {username}: {online_friends}")
+    except SQLAlchemyError as e:
+        logger.error(f"Error fetching online friends for user_id {user_id}: {str(e)}")
+
+def register_events(socketio: SocketIO, db, current_user):
+    from app import Message, User, Conversation, ConversationMember, Friendship, Notification
+
+    @socketio.on('connect')
+    def handle_connect():
+        if not current_user.is_authenticated:
+            emit('error', {'message': 'Vui lòng đăng nhập để tham gia chat.'}, room=request.sid)
+            socketio.close_room(request.sid)
+            logger.warning(f"Unauthorized connection attempt: {request.sid}")
+            return
+
+        username = current_user.username
+        logger.info(f'Client connected: {request.sid} (User: {username})')
+        user_sessions[username] = request.sid
+
+        # Join active conversation rooms (limit to recent 50 for performance)
+        try:
+            conversations = db.session.query(Conversation).join(ConversationMember).filter(
+                ConversationMember.user_id == current_user.id
+            ).order_by(Conversation.created_at.desc()).limit(50).all()
+            for convo in conversations:
+                join_room(f'conversation_{convo.id}')
+                logger.debug(f'User {username} joined room conversation_{convo.id}')
+        except SQLAlchemyError as e:
+            logger.error(f"Error joining conversation rooms for user {username}: {str(e)}")
+
+        emit_online_friends(socketio, db, current_user.id)
+
+        emit('welcome', {
+            'username': 'Hệ thống',
+            'content': f'Chào mừng {username} đến với ProjectAI Chat!',
+            'timestamp': datetime.utcnow().isoformat()
+        }, room=request.sid)
+
+    @socketio.on('disconnect')
+    def handle_disconnect():
+        logger.info(f'Client disconnected: {request.sid}')
+        disconnected_username = None
+        for username, sid in list(user_sessions.items()):
+            if sid == request.sid:
+                disconnected_username = username
+                del user_sessions[username]
+                break
+        
+        if disconnected_username:
+            logger.info(f'User {disconnected_username} disconnected.')
+            try:
+                user = db.session.query(User).filter_by(username=disconnected_username).first()
+                if user:
+                    emit_online_friends(socketio, db, user.id)
+            except SQLAlchemyError as e:
+                logger.error(f"Error updating friends list on disconnect for {disconnected_username}: {str(e)}")
 
     @socketio.on('message')
     def handle_message(data):
@@ -21,107 +94,89 @@ def register_events(socketio, db, current_user):
             emit('error', {'message': 'Vui lòng đăng nhập để gửi tin nhắn.'}, room=request.sid)
             return
 
-        sender_username = current_user.username
-        message_content = data.get('message', '').strip()
-        recipient_username = data.get('recipient', 'all')
+        conversation_id = data.get('conversation_id')
+        content = data.get('content', '').strip()
 
-        # Validate message content
-        if not message_content:
-            emit('error', {'message': 'Tin nhắn không được để trống!'}, room=request.sid)
+        if not conversation_id or not content:
+            emit('error', {'message': 'Cuộc trò chuyện và nội dung tin nhắn là bắt buộc!'}, room=request.sid)
+            logger.warning(f"Invalid message data from {current_user.username}: {data}")
             return
-        if len(message_content) > 500:
+        if len(content) > 500:
             emit('error', {'message': 'Tin nhắn không được vượt quá 500 ký tự!'}, room=request.sid)
             return
 
-        print(f'Tin nhắn từ {sender_username} đến {recipient_username}: {message_content}')
-
-        if recipient_username == 'all':
-            # Public message
-            new_message = Message(
-                username=sender_username,
-                message_content=message_content,
-                is_private=False,
-                timestamp=datetime.utcnow()
-            )
-            db.session.add(new_message)
-            db.session.commit()
-            emit('message', new_message.to_dict(), broadcast=True)
-        else:
-            # Private message
-            recipient_user = User.query.filter_by(username=recipient_username).first()
-            if not recipient_user:
-                emit('message', {
-                    'username': 'Hệ thống',
-                    'message': f'Người dùng "{recipient_username}" không tồn tại.',
-                    'timestamp': datetime.utcnow().isoformat(),
-                    'private': True,
-                    'recipient': sender_username
-                }, room=request.sid)
+        try:
+            conversation = db.session.query(Conversation).get(conversation_id)
+            if not conversation or not db.session.query(ConversationMember).filter_by(
+                conversation_id=conversation_id, user_id=current_user.id).first():
+                emit('error', {'message': 'Bạn không có quyền gửi tin nhắn trong cuộc trò chuyện này!'}, room=request.sid)
+                logger.warning(f"Unauthorized message attempt by {current_user.username} in conversation {conversation_id}")
                 return
 
-            recipient_sid = active_users_sid_map.get(recipient_username)
-            if recipient_sid:
-                private_message = Message(
-                    username=sender_username,
-                    message_content=message_content,
-                    is_private=True,
-                    recipient_username=recipient_username,
-                    timestamp=datetime.utcnow()
-                )
-                db.session.add(private_message)
-                db.session.commit()
-                
-                private_message_data = private_message.to_dict()
-                private_message_data['message'] = "(Riêng tư) " + message_content
-                
-                # Send to recipient
-                emit('message', private_message_data, room=recipient_sid)
-                # Send back to sender
-                emit('message', private_message_data, room=request.sid)
-            else:
-                emit('message', {
-                    'username': 'Hệ thống',
-                    'message': f'Người dùng "{recipient_username}" hiện không trực tuyến.',
-                    'timestamp': datetime.utcnow().isoformat(),
-                    'private': True,
-                    'recipient': sender_username
-                }, room=request.sid)
+            message = Message(
+                conversation_id=conversation_id,
+                sender_id=current_user.id,
+                content=content,
+                timestamp=datetime.utcnow()
+            )
+            db.session.add(message)
+            db.session.flush()  # Get message ID before commit
 
-    @socketio.on('connect')
-    def handle_connect():
-        if not current_user.is_authenticated:
-            emit('error', {'message': 'Vui lòng đăng nhập để tham gia chat.'}, room=request.sid)
-            socketio.close_room(request.sid)
+            # Create notifications for other members
+            members = db.session.query(ConversationMember).filter_by(conversation_id=conversation_id).filter(
+                ConversationMember.user_id != current_user.id).all()
+            for member in members:
+                notification = Notification(
+                    user_id=member.user_id,
+                    name='new_message',
+                    payload_json=f'{{"conversation_id": {conversation_id}, "from_username": "{current_user.username}"}}'
+                )
+                db.session.add(notification)
+
+            db.session.commit()
+            message_dict = message.to_dict()
+            emit('message', message_dict, room=f'conversation_{conversation_id}')
+            logger.info(f"Message sent by {current_user.username} in conversation {conversation_id}: {content}")
+        except IntegrityError:
+            db.session.rollback()
+            emit('error', {'message': 'Lỗi dữ liệu: Tin nhắn không thể được lưu.'}, room=request.sid)
+            logger.error(f"IntegrityError sending message by {current_user.username}: {data}")
+        except SQLAlchemyError as e:
+            db.session.rollback()
+            emit('error', {'message': f'Lỗi khi gửi tin nhắn: {str(e)}'}, room=request.sid)
+            logger.error(f"SQLAlchemyError sending message by {current_user.username}: {str(e)}")
+
+    @socketio.on('typing')
+    def handle_typing(data):
+        conversation_id = data.get('conversation_id')
+        if not conversation_id:
             return
 
-        print(f'Client đã kết nối: {request.sid} (Người dùng: {current_user.username})')
-        active_users_sid_map[current_user.username] = request.sid
-        emit_active_users_list()
+        try:
+            if db.session.query(ConversationMember).filter_by(
+                conversation_id=conversation_id, user_id=current_user.id).first():
+                emit('typing', {
+                    'username': current_user.username,
+                    'conversation_id': conversation_id
+                }, room=f'conversation_{conversation_id}', include_self=False)
+                logger.debug(f"Typing event by {current_user.username} in conversation {conversation_id}")
+        except SQLAlchemyError as e:
+            logger.error(f"Error handling typing event for {current_user.username}: {str(e)}")
 
-        # Send public message history (last 50 public messages)
-        messages = Message.query.filter_by(is_private=False).order_by(Message.timestamp.asc()).limit(50).all()
-        history_to_send = [msg.to_dict() for msg in messages]
-        if history_to_send:
-            emit('message_history', history_to_send, room=request.sid)
+    @socketio.on('read_message')
+    def handle_read_message(data):
+        message_id = data.get('message_id')
+        if not message_id:
+            return
 
-        # Send welcome message to the connected user
-        emit('message', {
-            'username': 'Hệ thống',
-            'message': f'Chào mừng {current_user.username} đến với phòng chat!',
-            'timestamp': datetime.utcnow().isoformat(),
-            'private': False
-        }, room=request.sid)
-
-    @socketio.on('disconnect')
-    def handle_disconnect():
-        print(f'Client đã ngắt kết nối: {request.sid}')
-        disconnected_username = None
-        for username, sid in list(active_users_sid_map.items()):
-            if sid == request.sid:
-                disconnected_username = username
-                del active_users_sid_map[username]
-                break
-        
-        if disconnected_username:
-            print(f'Người dùng {disconnected_username} đã ngắt kết nối.')
-            emit_active_users_list()
+        try:
+            message = db.session.query(Message).get(message_id)
+            if message and db.session.query(ConversationMember).filter_by(
+                conversation_id=message.conversation_id, user_id=current_user.id).first() and not message.is_read:
+                message.is_read = True
+                db.session.commit()
+                emit('message_read', {'message_id': message_id}, room=f'conversation_{message.conversation_id}')
+                logger.info(f"Message {message_id} marked as read by {current_user.username}")
+        except SQLAlchemyError as e:
+            db.session.rollback()
+            logger.error(f"Error marking message {message_id} as read: {str(e)}")
