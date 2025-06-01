@@ -6,9 +6,21 @@ from flask_migrate import Migrate
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
+from sqlalchemy import MetaData
 
-from config import Config 
+from config import Config
 from events import register_events
+
+# Define naming convention for Alembic migrations
+metadata = MetaData(
+    naming_convention={
+        "ix": 'ix_%(column_0_label)s',
+        "uq": "uq_%(table_name)s_%(column_0_name)s",
+        "ck": "ck_%(table_name)s_%(constraint_name)s",
+        "fk": "fk_%(table_name)s_%(column_0_name)s_%(referred_table_name)s",
+        "pk": "pk_%(table_name)s"
+    }
+)
 
 app = Flask(__name__)
 app.config.from_object(Config)
@@ -16,41 +28,32 @@ app.config.from_object(Config)
 # Initialize SQLAlchemy without metadata_obj
 db = SQLAlchemy(app)
 
-# Define naming convention for Alembic migrations
-naming_convention = {
-    "ix": 'ix_%(column_0_label)s',
-    "uq": "uq_%(table_name)s_%(column_0_name)s",
-    "ck": "ck_%(table_name)s_%(constraint_name)s",
-    "fk": "fk_%(table_name)s_%(column_0_name)s_%(referred_table_name)s",
-    "pk": "pk_%(table_name)s"
-}
-
-migrate = Migrate(app, db, render_as_batch=True)  # Enable batch mode for SQLite compatibility
+migrate = Migrate(app, db, render_as_batch=True)
 
 login_manager = LoginManager()
 login_manager.init_app(app)
-login_manager.login_view = 'login' 
-login_manager.login_message = "Vui lòng đăng nhập để truy cập trang này." 
-login_manager.login_message_category = "info" 
+login_manager.login_view = 'login'
+login_manager.login_message = "Vui lòng đăng nhập để truy cập trang này."
+login_manager.login_message_category = "info"
 
 @login_manager.user_loader
 def load_user(user_id):
-    return User.query.get(int(user_id))
+    return db.session.get(User, int(user_id))
 
 # --- Models ---
 class User(UserMixin, db.Model):
-    __tablename__ = 'user' 
+    __tablename__ = 'user'
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False, index=True)
     password_hash = db.Column(db.String(256), nullable=False)
     
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     avatar_url = db.Column(db.String(256), nullable=True, default='https://placehold.co/120x120/007bff/ffffff?text=User')
-
-    email = db.Column(db.String(120), unique=True, nullable=True, index=True) 
+    
+    email = db.Column(db.String(120), unique=True, nullable=True, index=True)
     full_name = db.Column(db.String(120), nullable=True)
-    bio = db.Column(db.Text, nullable=True) 
-    last_seen = db.Column(db.DateTime, default=datetime.utcnow) 
+    bio = db.Column(db.Text, nullable=True)
+    last_seen = db.Column(db.DateTime, default=datetime.utcnow)
 
     notifications = db.relationship('Notification', backref='recipient_user', lazy='dynamic', foreign_keys='Notification.user_id')
     activities = db.relationship('UserActivity', backref='actor_user', lazy='dynamic', foreign_keys='UserActivity.user_id')
@@ -63,7 +66,7 @@ class User(UserMixin, db.Model):
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
     
-    def ping(self): 
+    def ping(self):
         self.last_seen = datetime.utcnow()
         db.session.add(self)
 
@@ -73,8 +76,8 @@ class User(UserMixin, db.Model):
 class Message(db.Model):
     __tablename__ = 'message'
     id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(80), nullable=False) 
-    message_content = db.Column(db.Text, nullable=False) 
+    username = db.Column(db.String(80), nullable=False)
+    message_content = db.Column(db.Text, nullable=False)
     timestamp = db.Column(db.DateTime, default=datetime.utcnow, index=True)
     is_private = db.Column(db.Boolean, default=False)
     recipient_username = db.Column(db.String(80), nullable=True)
@@ -82,10 +85,10 @@ class Message(db.Model):
     def __repr__(self):
         return f'<Message ID {self.id} from {self.username}>'
 
-    def to_dict(self): 
+    def to_dict(self):
         return {
             'id': self.id,
-            'username': self.username, 
+            'username': self.username,
             'message': self.message_content,
             'timestamp': self.timestamp.isoformat(),
             'private': self.is_private,
@@ -96,7 +99,7 @@ class Friendship(db.Model):
     __tablename__ = 'friendship'
     user_a_id = db.Column(db.Integer, db.ForeignKey('user.id', name='fk_friendship_user_a_id_user'), primary_key=True)
     user_b_id = db.Column(db.Integer, db.ForeignKey('user.id', name='fk_friendship_user_b_id_user'), primary_key=True)
-    status = db.Column(db.String(30), nullable=False, default='pending_a_to_b') 
+    status = db.Column(db.String(30), nullable=False, default='pending_a_to_b')
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     accepted_at = db.Column(db.DateTime, nullable=True)
 
@@ -106,8 +109,8 @@ class Friendship(db.Model):
 class Notification(db.Model):
     __tablename__ = 'notification'
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id', name='fk_notification_user_id_user'), nullable=False, index=True) 
-    name = db.Column(db.String(128), nullable=False) 
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id', name='fk_notification_user_id_user'), nullable=False, index=True)
+    name = db.Column(db.String(128), nullable=False)
     payload_json = db.Column(db.Text, nullable=True)
     is_read = db.Column(db.Boolean, default=False, index=True)
     timestamp = db.Column(db.DateTime, default=datetime.utcnow, index=True)
@@ -128,8 +131,8 @@ class UserActivity(db.Model):
     __tablename__ = 'user_activity'
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id', name='fk_useractivity_user_id_user'), nullable=False, index=True)
-    activity_type = db.Column(db.String(50), nullable=False) 
-    description = db.Column(db.Text, nullable=True) 
+    activity_type = db.Column(db.String(50), nullable=False)
+    description = db.Column(db.Text, nullable=True)
     target_user_id = db.Column(db.Integer, db.ForeignKey('user.id', name='fk_useractivity_target_user_id_user'), nullable=True)
     target_message_id = db.Column(db.Integer, db.ForeignKey('message.id', name='fk_useractivity_target_message_id_message'), nullable=True)
     timestamp = db.Column(db.DateTime, default=datetime.utcnow, index=True)
@@ -139,7 +142,7 @@ class UserActivity(db.Model):
 
 # --- End Models ---
 
-socketio = SocketIO(app) 
+socketio = SocketIO(app)
 if 'register_events' in globals():
     register_events(socketio, db, current_user)
 
@@ -165,7 +168,7 @@ def register():
     if request.method == 'POST':
         username = request.form.get('username')
         password = request.form.get('password')
-        email = request.form.get('email', '').strip() 
+        email = request.form.get('email', '').strip()
         full_name = request.form.get('full_name', '').strip()
 
         if not username or not password:
@@ -175,11 +178,11 @@ def register():
         user_by_username = User.query.filter_by(username=username).first()
         user_by_email = None
         if email:
-             user_by_email = User.query.filter_by(email=email).first()
+            user_by_email = User.query.filter_by(email=email).first()
 
         if user_by_username:
             flash('Tên người dùng đã tồn tại!', 'danger')
-        elif email and user_by_email: 
+        elif email and user_by_email:
             flash('Địa chỉ email này đã được sử dụng!', 'danger')
         else:
             new_user = User(username=username, email=email if email else None, full_name=full_name if full_name else None)
@@ -243,25 +246,15 @@ def dashboard():
 
 # --- End Routes ---
 
-@app.after_request
-def session_commit(response):
-    if response.status_code < 400: 
-        try:
-            db.session.commit()
-        except Exception as e:
-            db.session.rollback()
-            app.logger.error(f"Error committing session: {e}") 
-    return response
-
 if __name__ == '__main__':
     if os.environ.get('WERKZEUG_RUN_MAIN') != 'true':
         try:
             import eventlet
             eventlet.monkey_patch()
-            print("Eventlet monkey patching applied for development server.")
+            print("Eventlet monkey patching applied.")
         except ImportError:
-            print("Eventlet not found, running without monkey patching for development server.")
-            pass 
+            print("Eventlet not found, running without monkey patching.")
+            pass
     
     port = int(os.environ.get('PORT', 5000))
     debug_mode = app.config.get('DEBUG', False)
