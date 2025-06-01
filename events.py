@@ -12,34 +12,34 @@ logger = logging.getLogger(__name__)
 # Global dictionary to store active user sessions: {username: session_id}
 user_sessions = {}
 
-def emit_online_friends(socketio: SocketIO, db, user_id: int):
-    """Broadcast the list of online friends to the user."""
-    try:
-        # Optimized query using join to fetch friends
-        friends = db.session.query(User.username).join(
-            Friendship, or_(
-                Friendship.user_a_id == User.id,
-                Friendship.user_b_id == User.id
-            )
-        ).filter(
-            or_(
-                Friendship.user_a_id == user_id,
-                Friendship.user_b_id == user_id
-            ),
-            Friendship.status == 'friends'
-        ).all()
-        online_friends = [f.username for f in friends if f.username in user_sessions]
-        username = db.session.query(User).filter_by(id=user_id).first().username
-        emit('update_user_list', sorted(online_friends), room=user_sessions.get(username))
-        logger.info(f"Emitted online friends list to user {username}: {online_friends}")
-    except SQLAlchemyError as e:
-        logger.error(f"Error fetching online friends for user_id {user_id}: {str(e)}")
-
 def register_events(socketio: SocketIO, db, current_user):
     from app import Message, User, Conversation, ConversationMember, Friendship, Notification
 
+    def emit_online_friends(user_id: int):
+        """Broadcast the list of online friends to the user."""
+        try:
+            # Optimized query using join to fetch friends
+            friends = db.session.query(User.username).join(
+                Friendship, or_(
+                    Friendship.user_a_id == User.id,
+                    Friendship.user_b_id == User.id
+                )
+            ).filter(
+                or_(
+                    Friendship.user_a_id == user_id,
+                    Friendship.user_b_id == user_id
+                ),
+                Friendship.status == 'friends'
+            ).all()
+            online_friends = [f.username for f in friends if f.username in user_sessions]
+            username = db.session.query(User).filter_by(id=user_id).first().username
+            emit('update_user_list', sorted(online_friends), room=user_sessions.get(username))
+            logger.info(f"Emitted online friends list to user {username}: {online_friends}")
+        except SQLAlchemyError as e:
+            logger.error(f"Error fetching online friends for user_id {user_id}: {str(e)}")
+
     @socketio.on('connect')
-    def handle_connect():
+    def handle_connect(auth=None):
         if not current_user.is_authenticated:
             emit('error', {'message': 'Vui lòng đăng nhập để tham gia chat.'}, room=request.sid)
             socketio.close_room(request.sid)
@@ -61,7 +61,7 @@ def register_events(socketio: SocketIO, db, current_user):
         except SQLAlchemyError as e:
             logger.error(f"Error joining conversation rooms for user {username}: {str(e)}")
 
-        emit_online_friends(socketio, db, current_user.id)
+        emit_online_friends(current_user.id)
 
         emit('welcome', {
             'username': 'Hệ thống',
@@ -84,7 +84,7 @@ def register_events(socketio: SocketIO, db, current_user):
             try:
                 user = db.session.query(User).filter_by(username=disconnected_username).first()
                 if user:
-                    emit_online_friends(socketio, db, user.id)
+                    emit_online_friends(user.id)
             except SQLAlchemyError as e:
                 logger.error(f"Error updating friends list on disconnect for {disconnected_username}: {str(e)}")
 
