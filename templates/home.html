@@ -1,11 +1,11 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title data-i18n="homeTitle">Chào mừng đến ProjectAI Chat</title>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
     <script>
         window.dataLayer = window.dataLayer || [];
@@ -17,210 +17,409 @@
         :root {
             --primary-color: #007bff;
             --secondary-color: #28a745;
-            --text-color: #1a1a2e;
-            --bg-light: rgba(255, 255, 255, 0.95);
-            --bg-dark: rgba(30, 30, 46, 0.95);
-            --button-primary-bg: linear-gradient(90deg, #007bff, #0056b3);
-            --button-secondary-bg: linear-gradient(90deg, #28a745, #1e7e34);
+            --text-color: #343a40;
+            --text-muted-color: #6c757d;
+            --bg-color: #f8f9fa;
+            --card-bg-color: #ffffff;
+            --border-color: #dee2e6;
+            --shadow-sm: 0 .125rem .25rem rgba(0,0,0,.075);
+            --shadow-md: 0 .5rem 1rem rgba(0,0,0,.15);
+            --navbar-bg: #343a40;
+            --navbar-link-color: rgba(255, 255, 255, 0.8);
+            --navbar-link-hover-color: #ffffff;
+            --sidebar-active-bg: #007bff;
+            --sidebar-active-color: #ffffff;
+            --danger-color: #dc3545;
+            --info-color: #17a2b8;
+            --warning-color: #ffc107;
         }
 
         [data-theme="dark"] {
-            --primary-color: #3399ff;
-            --secondary-color: #34c759;
-            --text-color: #e0e0e0;
-            --bg-light: var(--bg-dark);
-            --button-primary-bg: linear-gradient(90deg, #3399ff, #0066cc);
-            --button-secondary-bg: linear-gradient(90deg, #34c759, #279b48);
+            --primary-color: #4dabf7;
+            --secondary-color: #40c057;
+            --text-color: #e9ecef;
+            --text-muted-color: #adb5bd;
+            --bg-color: #121212;
+            --card-bg-color: #1e1e1e;
+            --border-color: #343a40;
+            --navbar-bg: #212529;
+            --sidebar-active-bg: #4dabf7;
+            --info-color: #39cccc;
+            --warning-color: #f39c12;
         }
 
-        * {
-            box-sizing: border-box;
+        *, *::before, *::after {
             margin: 0;
             padding: 0;
+            box-sizing: border-box;
         }
 
         body {
-            font-family: 'Roboto', Arial, sans-serif;
-            margin: 0;
-            overflow: hidden; /* Giữ lại để video nền không bị scroll */
-            display: flex;
-            flex-direction: column; /* Cho phép footer ở dưới */
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            position: relative;
+            font-family: 'Roboto', sans-serif;
+            background-color: var(--bg-color);
             color: var(--text-color);
-            background-color: var(--bg-light); /* Màu nền cho body */
+            line-height: 1.6;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            font-size: 16px;
         }
 
-        video.background-video {
-            position: fixed;
+        .dashboard-navbar {
+            background-color: var(--navbar-bg);
+            padding: 0.75rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: var(--shadow-sm);
+            position: sticky;
             top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            z-index: -1;
-            opacity: 0.7;
+            z-index: 1020;
         }
 
-        .main-content {
-            text-align: center;
-            background-color: var(--bg-light);
-            padding: 40px 50px;
-            border-radius: 16px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-            max-width: 700px;
-            width: 90%;
-            animation: fadeInScale 0.7s ease-out forwards;
-            backdrop-filter: blur(10px);
-            z-index: 10;
-            margin-top: 60px; /* Để không bị che bởi header controls */
-        }
-
-        @keyframes fadeInScale {
-            from {
-                opacity: 0;
-                transform: scale(0.95);
-            }
-            to {
-                opacity: 1;
-                transform: scale(1);
-            }
-        }
-
-        .main-content h1 {
-            font-size: 2.8em;
-            margin-bottom: 20px;
-            color: var(--primary-color);
+        .dashboard-navbar .logo a {
+            color: var(--navbar-link-hover-color);
+            text-decoration: none;
+            font-size: 1.5rem;
             font-weight: 700;
         }
 
-        .main-content p {
-            font-size: 1.2em;
-            margin-bottom: 30px;
-            line-height: 1.6;
-        }
-
-        .cta-buttons a {
-            display: inline-block;
-            padding: 15px 30px;
-            margin: 10px;
-            border-radius: 25px;
-            text-decoration: none;
-            color: white;
-            font-size: 1.1em;
-            font-weight: bold;
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
-            border: none;
-        }
-
-        .cta-buttons .btn-login {
-            background: var(--button-primary-bg);
-        }
-
-        .cta-buttons .btn-register {
-            background: var(--button-secondary-bg);
-        }
-        
-        .cta-buttons .btn-chat {
-            background: var(--button-primary-bg); /* Giống login hoặc màu khác tùy ý */
-        }
-
-
-        .cta-buttons a:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
-        }
-
-        .header-controls {
-            position: absolute;
-            top: 20px;
-            right: 20px;
+        .dashboard-navbar .nav-links ul {
+            list-style: none;
             display: flex;
-            gap: 15px;
-            z-index: 20; /* Đảm bảo các nút điều khiển ở trên cùng */
+            align-items: center;
         }
 
-        .theme-toggle, .sound-toggle, .lang-toggle {
-            cursor: pointer;
-            font-size: 1.5em; /* Tăng kích thước icon */
-            color: var(--text-color); /* Màu icon sẽ thay đổi theo theme */
-            padding: 8px;
-            background-color: var(--bg-light); /* Nền cho icon để dễ thấy hơn trên video */
-            border-radius: 50%;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-            transition: transform 0.3s ease, color 0.3s ease, background-color 0.3s ease;
+        .dashboard-navbar .nav-links ul li {
+            margin-left: 1.25rem;
         }
 
-        .theme-toggle:hover, .sound-toggle:hover, .lang-toggle:hover {
-            transform: scale(1.15);
+        .dashboard-navbar .nav-links ul li a {
+            color: var(--navbar-link-color);
+            text-decoration: none;
+            padding: 0.5rem 0.75rem;
+            border-radius: 0.25rem;
+            transition: color 0.2s ease, background-color 0.2s ease;
+            font-weight: 500;
+            font-size: 0.95rem;
         }
-        
-        /* Các hiệu ứng nổi (giữ lại nếu muốn) */
-        .floating-icon, .bubble, .particle {
-             position: absolute;
-             pointer-events: none;
-             z-index: 1; /* Đảm bảo dưới main content */
+        .dashboard-navbar .nav-links ul li a i {
+            margin-right: 0.4rem;
         }
-        .floating-icon { font-size: 1.8em; color: rgba(0, 123, 255, 0.2); opacity: 0.3; animation: float 8s ease-in-out infinite; }
-        @keyframes float { 0%, 100% { transform: translate(0, 0) rotate(0deg); } 50% { transform: translate(15px, -25px) rotate(120deg); }}
-        .icon-heart { top: 15%; left: 20%; animation-delay: 0s; }
-        .icon-star { top: 25%; right: 10%; animation-delay: 1s; }
-        .icon-smile { bottom: 15%; left: 30%; animation-delay: 2s; }
-        .icon-cloud { top: 10%; right: 30%; animation-delay: 3s; }
 
-        .bubble { bottom: -50px; background: rgba(255, 255, 255, 0.2); border-radius: 50%; animation: bubbleAnim 7s ease-in-out infinite; }
-        @keyframes bubbleAnim { 0% { transform: scale(0); opacity: 0; bottom: -50px; } 50% { transform: scale(1.2); opacity: 0.6; bottom: 50%; } 100% { transform: scale(0); opacity: 0; bottom: -50px; }}
-        .bubble1 { width: 45px; height: 45px; left: 15%; animation-delay: 0s; }
-        .bubble2 { width: 35px; height: 35px; left: 55%; animation-delay: 2s; }
-        .bubble3 { width: 40px; height: 40px; right: 15%; animation-delay: 3.5s; }
-        
-        .user-greeting {
-            margin-top: 15px;
+        .dashboard-navbar .nav-links ul li a:hover,
+        .dashboard-navbar .nav-links ul li a.active {
+            color: var(--navbar-link-hover-color);
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .dashboard-container {
+            display: flex;
+            flex-grow: 1;
+            max-width: 1400px;
+            width: 95%;
+            margin: 1.5rem auto;
+            gap: 1.5rem;
+        }
+
+        .dashboard-sidebar {
+            flex: 0 0 280px;
+            background-color: var(--card-bg-color);
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            box-shadow: var(--shadow-sm);
+            height: fit-content;
+            position: sticky;
+            top: calc(0.75rem * 2 + 1.5rem + 1.5rem + 1.5rem);
+        }
+
+        .dashboard-sidebar .sidebar-nav ul {
+            list-style: none;
+        }
+
+        .dashboard-sidebar .sidebar-nav ul li a {
+            display: flex;
+            align-items: center;
+            padding: 0.8rem 1rem;
+            color: var(--text-muted-color);
+            text-decoration: none;
+            border-radius: 0.375rem;
+            transition: background-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            font-size: 0.95rem;
+        }
+        .dashboard-sidebar .sidebar-nav ul li a i {
+            margin-right: 0.8rem;
+            width: 20px;
+            text-align: center;
+            color: var(--text-muted-color);
+            transition: color 0.2s ease;
+        }
+
+        .dashboard-sidebar .sidebar-nav ul li a:hover {
+            background-color: rgba(var(--primary-color-rgb, 0, 123, 255), 0.08);
+            color: var(--primary-color);
+            transform: translateX(2px);
+        }
+        .dashboard-sidebar .sidebar-nav ul li a:hover i {
+            color: var(--primary-color);
+        }
+
+        .dashboard-sidebar .sidebar-nav ul li a.active {
+            background-color: var(--sidebar-active-bg);
+            color: var(--sidebar-active-color);
+            font-weight: 700;
+        }
+        .dashboard-sidebar .sidebar-nav ul li a.active i {
+            color: var(--sidebar-active-color);
+        }
+
+        .dashboard-main-content {
+            flex-grow: 1;
+        }
+
+        .page-header {
+            margin-bottom: 1.5rem;
+        }
+        .page-header h1 {
+            font-size: 1.75rem;
+            font-weight: 500;
+            color: var(--text-color);
+        }
+        .page-header p {
+            color: var(--text-muted-color);
+            font-size: 0.95rem;
+        }
+
+        .widget {
+            background-color: var(--card-bg-color);
+            padding: 1.25rem;
+            border-radius: 0.5rem;
+            box-shadow: var(--shadow-sm);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            display: flex;
+            flex-direction: column;
+        }
+        .widget:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 0.25rem 1rem rgba(0,0,0,.1);
+        }
+
+        .widget .widget-header {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 0.75rem;
+        }
+        .widget .widget-header .widget-icon {
+            font-size: 1.25rem;
+            color: var(--primary-color);
+            background-color: rgba(var(--primary-color-rgb, 0, 123, 255), 0.1);
+            border-radius: 0.375rem;
+            padding: 0.6rem;
+            margin-right: 1rem;
+            line-height: 1;
+        }
+        .widget .widget-header .widget-title h3 {
+            color: var(--text-color);
+            font-size: 1.05rem;
+            margin: 0;
+            font-weight: 500;
+        }
+        .widget .widget-header .widget-title p {
+            font-size: 0.8rem;
+            color: var(--text-muted-color);
+            margin: 0;
+        }
+
+        .widget .widget-content {
+            flex-grow: 1;
+        }
+        .widget .widget-content p {
+            font-size: 1rem;
+            color: var(--text-color);
+            margin-bottom: 1rem;
+        }
+        .widget .widget-content .user-greeting {
             font-size: 1.1em;
             color: var(--secondary-color);
+            font-weight: 500;
         }
 
+        .widget .widget-footer {
+            margin-top: auto;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border-color);
+            text-align: center;
+        }
+        .widget .widget-footer a {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            margin: 0.5rem;
+            border-radius: 0.25rem;
+            text-decoration: none;
+            color: white;
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .widget .widget-footer a.btn-login {
+            background: linear-gradient(90deg, #007bff, #0056b3);
+        }
+        .widget .widget-footer a.btn-register, .widget .widget-footer a.btn-logout {
+            background: linear-gradient(90deg, #28a745, #1e7e34);
+        }
+        .widget .widget-footer a.btn-chat {
+            background: linear-gradient(90deg, #007bff, #0056b3);
+        }
+        .widget .widget-footer a:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        .dashboard-footer {
+            text-align: center;
+            padding: 1.5rem;
+            margin-top: auto;
+            color: var(--text-muted-color);
+            font-size: 0.875rem;
+            background-color: var(--card-bg-color);
+            border-top: 1px solid var(--border-color);
+        }
+
+        @media (max-width: 1200px) {
+            .dashboard-sidebar {
+                flex: 0 0 240px;
+            }
+        }
+        @media (max-width: 992px) {
+            .dashboard-container {
+                flex-direction: column;
+            }
+            .dashboard-sidebar {
+                flex: 0 0 auto;
+                width: 100%;
+                margin-bottom: 1.5rem;
+                position: static;
+            }
+            .page-header { text-align: center; }
+        }
+        @media (max-width: 768px) {
+            .dashboard-navbar {
+                padding: 0.75rem 1rem;
+            }
+            .dashboard-navbar .logo a { font-size: 1.25rem; }
+            .dashboard-navbar .nav-links ul {
+                display: none;
+            }
+            .dashboard-container { margin: 1rem auto; width: 90%; }
+        }
+
+        :root {
+            --primary-color-rgb: 0, 123, 255;
+        }
+        [data-theme="dark"] {
+            --primary-color-rgb: 77, 171, 247;
+        }
+        .badge {
+            display: inline-block;
+            padding: .35em .65em;
+            font-size: .75em;
+            font-weight: 700;
+            line-height: 1;
+            color: #fff;
+            text-align: center;
+            white-space: nowrap;
+            vertical-align: baseline;
+            border-radius: .375rem;
+        }
+        .bg-danger { background-color: var(--danger-color) !important; }
+        .bg-info { background-color: var(--info-color) !important; }
+        .bg-warning { background-color: var(--warning-color) !important; }
+        .text-white { color: #fff !important; }
+        .ms-auto { margin-left: auto !important; }
     </style>
 </head>
-<body>
-    <video class="background-video" autoplay muted loop playsinline>
-        <source src="https://assets.mixkit.co/videos/preview/mixkit-abstract-blue-motion-background-345.mp4" type="video/mp4">
-        Trình duyệt của bạn không hỗ trợ video tag.
-    </video>
+<body data-theme="light">
+    <nav class="dashboard-navbar">
+        <div class="logo">
+            <a href="{{ url_for('home') }}">ProjectAI</a>
+        </div>
+        <div class="nav-links">
+            <ul>
+                <li><a href="{{ url_for('home') }}" class="active"><i class="fas fa-home"></i> Trang chủ</a></li>
+                <li><a href="{{ url_for('chat_room') }}"><i class="fas fa-comments"></i> Phòng Chat</a></li>
+                {% if current_user.is_authenticated %}
+                    <li><a href="{{ url_for('dashboard') }}"><i class="fas fa-user-cog"></i> Dashboard</a></li>
+                    <li><a href="{{ url_for('logout') }}"><i class="fas fa-sign-out-alt"></i> Đăng xuất</a></li>
+                {% else %}
+                    <li><a href="{{ url_for('login') }}"><i class="fas fa-sign-in-alt"></i> Đăng nhập</a></li>
+                {% endif %}
+                <li><a href="#" id="theme-toggle-btn" title="Chuyển đổi giao diện"><i class="fas fa-adjust"></i></a></li>
+                <li><a href="#" id="lang-toggle-btn" title="Chuyển đổi ngôn ngữ"><i class="fas fa-globe"></i></a></li>
+                <li><a href="#" id="sound-toggle-btn" title="Bật/tắt âm thanh"><i class="fas fa-volume-up"></i></a></li>
+            </ul>
+        </div>
+    </nav>
 
-    <i class="fas fa-heart floating-icon icon-heart"></i>
-    <i class="fas fa-star floating-icon icon-star"></i>
-    <i class="fas fa-smile floating-icon icon-smile"></i>
-    <i class="fas fa-cloud floating-icon icon-cloud"></i>
-    <div class="bubble bubble1"></div>
-    <div class="bubble bubble2"></div>
-    <div class="bubble bubble3"></div>
+    <div class="dashboard-container">
+        <aside class="dashboard-sidebar">
+            <nav class="sidebar-nav">
+                <ul>
+                    <li><a href="{{ url_for('home') }}" class="active"><i class="fas fa-home"></i> Trang chủ</a></li>
+                    <li><a href="{{ url_for('chat_room') }}"><i class="fas fa-comments"></i> Phòng Chat</a></li>
+                    {% if current_user.is_authenticated %}
+                        <li><a href="{{ url_for('dashboard') }}"><i class="fas fa-user-cog"></i> Dashboard</a></li>
+                        <li><a href="{{ url_for('edit_profile') }}"><i class="fas fa-user-edit"></i> Chỉnh sửa Hồ sơ</a></li>
+                        <li><a href="{{ url_for('notifications') }}"><i class="fas fa-bell"></i> Thông báo</a></li>
+                        <li><a href="{{ url_for('friends') }}"><i class="fas fa-users"></i> Bạn bè</a></li>
+                        <li><a href="{{ url_for('settings') }}"><i class="fas fa-cog"></i> Cài đặt</a></li>
+                        <li><a href="{{ url_for('security') }}"><i class="fas fa-shield-alt"></i> Bảo mật</a></li>
+                    {% else %}
+                        <li><a href="{{ url_for('login') }}"><i class="fas fa-sign-in-alt"></i> Đăng nhập</a></li>
+                        <li><a href="{{ url_for('register') }}"><i class="fas fa-user-plus"></i> Đăng ký</a></li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </aside>
 
-    <div class="header-controls">
-        <i class="fas fa-moon theme-toggle" id="themeToggle"></i>
-        <i class="fas fa-volume-up sound-toggle" id="soundToggle"></i>
-        <i class="fas fa-globe lang-toggle" id="langToggle"></i>
+        <main class="dashboard-main-content">
+            <div class="page-header">
+                <h1 data-i18n="welcomeTitle">Chào mừng đến ProjectAI Chat!</h1>
+                <p data-i18n="welcomeMessage">Kết nối, trò chuyện và chia sẻ khoảnh khắc với bạn bè và đồng nghiệp một cách dễ dàng và nhanh chóng.</p>
+            </div>
+
+            <div class="widget">
+                <div class="widget-header">
+                    <span class="widget-icon"><i class="fas fa-comment-alt"></i></span>
+                    <div class="widget-title">
+                        <h3 data-i18n="welcomeTitle">ProjectAI Chat</h3>
+                        <p data-i18n="welcomeMessage">Tham gia cộng đồng chat của chúng tôi!</p>
+                    </div>
+                </div>
+                <div class="widget-content">
+                    {% if current_user.is_authenticated %}
+                        <p class="user-greeting" data-i18n="loggedInWelcome">Chào mừng trở lại, <strong>{{ current_user.username }}</strong>!</p>
+                    {% else %}
+                        <p>Đăng nhập hoặc đăng ký để bắt đầu trò chuyện!</p>
+                    {% endif %}
+                </div>
+                <div class="widget-footer">
+                    {% if current_user.is_authenticated %}
+                        <a href="{{ url_for('chat_room') }}" class="btn-chat" data-i18n="goToChat">Vào Phòng Chat</a>
+                        <a href="{{ url_for('logout') }}" class="btn-logout" data-i18n="logout">Đăng xuất</a>
+                    {% else %}
+                        <a href="{{ url_for('login') }}" class="btn-login" data-i18n="login">Đăng nhập</a>
+                        <a href="{{ url_for('register') }}" class="btn-register" data-i18n="register">Đăng ký</a>
+                    {% endif %}
+                </div>
+            </div>
+        </main>
     </div>
 
-    <div class="main-content">
-        <h1 data-i18n="welcomeTitle">Chào mừng đến ProjectAI Chat!</h1>
-        <p data-i18n="welcomeMessage">Kết nối, trò chuyện và chia sẻ khoảnh khắc với bạn bè và đồng nghiệp một cách dễ dàng và nhanh chóng.</p>
-        
-        {% if current_user.is_authenticated %}
-            <p class="user-greeting" data-i18n="loggedInWelcome">Chào mừng trở lại, <strong>{{ current_user.username }}</strong>!</p>
-            <div class="cta-buttons">
-                <a href="{{ url_for('chat_room') }}" class="btn-chat" data-i18n="goToChat">Vào Phòng Chat</a>
-                <a href="{{ url_for('logout') }}" class="btn-register" data-i18n="logout">Đăng xuất</a>
-            </div>
-        {% else %}
-            <div class="cta-buttons">
-                <a href="{{ url_for('login') }}" class="btn-login" data-i18n="login">Đăng nhập</a>
-                <a href="{{ url_for('register') }}" class="btn-register" data-i18n="register">Đăng ký</a>
-            </div>
-        {% endif %}
-    </div>
+    <footer class="dashboard-footer">
+        <p>© <script>document.write(new Date().getFullYear())</script> ProjectAI. Bảo lưu mọi quyền.</p>
+    </footer>
 
     <script>
         // Sound effect
@@ -251,8 +450,8 @@
         };
 
         // Load preferences
-        const savedTheme = localStorage.getItem('theme') || 'light';
-        const savedSound = localStorage.getItem('sound') !== 'false'; // Default to true if not set
+        let savedTheme = localStorage.getItem('theme') || 'light';
+        let savedSound = localStorage.getItem('sound') !== 'false';
         let savedLang = localStorage.getItem('lang') || 'vi';
         document.body.dataset.theme = savedTheme;
         let soundEnabled = savedSound;
@@ -260,17 +459,9 @@
         function updateLanguage(lang) {
             document.querySelectorAll('[data-i18n]').forEach(el => {
                 const key = el.dataset.i18n;
-                // Handle case for dynamic content like "Chào mừng trở lại, {{ username }}!"
-                if (el.dataset.i18nBase && translations[lang][el.dataset.i18nBase]) {
-                     // This part is a bit tricky for combined static/dynamic text,
-                     // for simplicity, we'll mostly rely on separate elements or Jinja for dynamic parts.
-                     // Here, Jinja already handles the username.
-                } else if (translations[lang][key]) {
-                     el.innerHTML = translations[lang][key] + (el.querySelector('strong') ? `, <strong>${el.querySelector('strong').innerText}</strong>!` : '');
+                if (translations[lang][key]) {
+                    el.innerHTML = translations[lang][key] + (el.querySelector('strong') ? `, <strong>${el.querySelector('strong').innerText}</strong>!` : '');
                 }
-
-
-                // Update title specifically
                 if (key === 'homeTitle') {
                     document.title = translations[lang][key];
                 }
@@ -278,44 +469,61 @@
             localStorage.setItem('lang', lang);
             savedLang = lang;
         }
-        
-        // Initialize UI elements after DOM is loaded
+
         document.addEventListener('DOMContentLoaded', () => {
-            const themeToggle = document.getElementById('themeToggle');
-            const soundToggle = document.getElementById('soundToggle');
-            const langToggle = document.getElementById('langToggle');
+            const themeToggleButton = document.getElementById('theme-toggle-btn');
+            const soundToggleButton = document.getElementById('sound-toggle-btn');
+            const langToggleButton = document.getElementById('lang-toggle-btn');
 
-            themeToggle.classList.toggle('fa-moon', savedTheme === 'light');
-            themeToggle.classList.toggle('fa-sun', savedTheme === 'dark');
-            
-            soundToggle.classList.toggle('fa-volume-up', soundEnabled);
-            soundToggle.classList.toggle('fa-volume-mute', !soundEnabled);
+            if (themeToggleButton) {
+                const icon = themeToggleButton.querySelector('i');
+                const applyTheme = (theme) => {
+                    document.body.dataset.theme = theme;
+                    localStorage.setItem('theme', theme);
+                    if (theme === 'dark') {
+                        icon.classList.remove('fa-adjust');
+                        icon.classList.add('fa-sun');
+                    } else {
+                        icon.classList.remove('fa-sun');
+                        icon.classList.add('fa-adjust');
+                    }
+                };
 
-            updateLanguage(savedLang); // Initial language setup
+                applyTheme(savedTheme);
 
-            themeToggle.addEventListener('click', () => {
-                document.body.dataset.theme = document.body.dataset.theme === 'dark' ? 'light' : 'dark';
-                themeToggle.classList.toggle('fa-moon');
-                themeToggle.classList.toggle('fa-sun');
-                localStorage.setItem('theme', document.body.dataset.theme);
-                if (soundEnabled) clickSound.play();
-            });
+                themeToggleButton.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    savedTheme = document.body.dataset.theme === 'dark' ? 'light' : 'dark';
+                    applyTheme(savedTheme);
+                    if (soundEnabled) clickSound.play();
+                });
+            }
 
-            soundToggle.addEventListener('click', () => {
-                soundEnabled = !soundEnabled;
-                soundToggle.classList.toggle('fa-volume-up');
-                soundToggle.classList.toggle('fa-volume-mute');
-                localStorage.setItem('sound', soundEnabled);
-                if (soundEnabled) clickSound.play();
-            });
+            if (soundToggleButton) {
+                soundToggleButton.querySelector('i').classList.toggle('fa-volume-up', soundEnabled);
+                soundToggleButton.querySelector('i').classList.toggle('fa-volume-mute', !soundEnabled);
 
-            langToggle.addEventListener('click', () => {
-                const newLang = savedLang === 'vi' ? 'en' : 'vi';
-                updateLanguage(newLang);
-                if (soundEnabled) clickSound.play();
-            });
+                soundToggleButton.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    soundEnabled = !soundEnabled;
+                    soundToggleButton.querySelector('i').classList.toggle('fa-volume-up');
+                    soundToggleButton.querySelector('i').classList.toggle('fa-volume-mute');
+                    localStorage.setItem('sound', soundEnabled);
+                    if (soundEnabled) clickSound.play();
+                });
+            }
+
+            if (langToggleButton) {
+                updateLanguage(savedLang);
+
+                langToggleButton.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const newLang = savedLang === 'vi' ? 'en' : 'vi';
+                    updateLanguage(newLang);
+                    if (soundEnabled) clickSound.play();
+                });
+            }
         });
-
     </script>
 </body>
 </html>
