@@ -3,25 +3,42 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard - {{ username }}</title>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <title>Dashboard - {{ current_user.username }}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
     <style>
         :root {
             --primary-color: #007bff;
             --secondary-color: #28a745;
-            --text-color: #333;
-            --bg-color: #f4f7f6; /* Màu nền chung cho trang */
-            --card-bg-color: #ffffff; /* Màu nền cho các card/widget */
-            --border-color: #e0e0e0;
-            --shadow-color: rgba(0, 0, 0, 0.1);
+            --text-color: #343a40;
+            --text-muted-color: #6c757d;
+            --bg-color: #f8f9fa;
+            --card-bg-color: #ffffff;
+            --border-color: #dee2e6;
+            --shadow-sm: 0 .125rem .25rem rgba(0,0,0,.075);
+            --shadow-md: 0 .5rem 1rem rgba(0,0,0,.15);
             --navbar-bg: #343a40;
-            --navbar-link-color: rgba(255, 255, 255, 0.75);
+            --navbar-link-color: rgba(255, 255, 255, 0.8);
             --navbar-link-hover-color: #ffffff;
+            --sidebar-active-bg: #007bff;
+            --sidebar-active-color: #ffffff;
+            --danger-color: #dc3545;
+        }
+
+        [data-theme="dark"] {
+            --primary-color: #4dabf7; /* Sáng hơn một chút cho theme tối */
+            --secondary-color: #40c057;
+            --text-color: #e9ecef;
+            --text-muted-color: #adb5bd;
+            --bg-color: #121212;
+            --card-bg-color: #1e1e1e;
+            --border-color: #343a40;
+            --navbar-bg: #212529;
+            --sidebar-active-bg: #4dabf7;
         }
 
         /* Reset cơ bản */
-        * {
+        *, *::before, *::after {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
@@ -33,25 +50,29 @@
             color: var(--text-color);
             line-height: 1.6;
             display: flex;
-            flex-direction: column; /* Để footer dính xuống dưới nếu nội dung không đủ dài */
+            flex-direction: column;
             min-height: 100vh;
+            font-size: 16px; /* Base font size */
         }
 
         /* Navbar Styling */
         .dashboard-navbar {
             background-color: var(--navbar-bg);
-            padding: 0.8rem 2rem;
+            padding: 0.75rem 2rem;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            box-shadow: 0 2px 4px var(--shadow-color);
+            box-shadow: var(--shadow-sm);
+            position: sticky; /* Giữ navbar ở trên cùng khi cuộn */
+            top: 0;
+            z-index: 1020; /* Đảm bảo navbar ở trên các thành phần khác */
         }
 
         .dashboard-navbar .logo a {
             color: var(--navbar-link-hover-color);
             text-decoration: none;
-            font-size: 1.6rem;
-            font-weight: bold;
+            font-size: 1.5rem;
+            font-weight: 700;
         }
 
         .dashboard-navbar .nav-links ul {
@@ -61,19 +82,20 @@
         }
 
         .dashboard-navbar .nav-links ul li {
-            margin-left: 1.5rem;
+            margin-left: 1.25rem;
         }
 
         .dashboard-navbar .nav-links ul li a {
             color: var(--navbar-link-color);
             text-decoration: none;
-            padding: 0.6rem 0.8rem;
-            border-radius: 5px;
-            transition: color 0.3s ease, background-color 0.3s ease;
+            padding: 0.5rem 0.75rem;
+            border-radius: 0.25rem;
+            transition: color 0.2s ease, background-color 0.2s ease;
             font-weight: 500;
+            font-size: 0.95rem;
         }
         .dashboard-navbar .nav-links ul li a i {
-            margin-right: 0.5rem;
+            margin-right: 0.4rem;
         }
 
         .dashboard-navbar .nav-links ul li a:hover,
@@ -85,62 +107,95 @@
         /* Main Dashboard Container */
         .dashboard-container {
             display: flex;
-            flex-grow: 1; /* Cho phép container này chiếm không gian còn lại */
-            max-width: 1300px; /* Giới hạn chiều rộng tối đa */
-            width: 95%; /* Chiếm 95% chiều rộng của viewport */
-            margin: 2rem auto; /* Căn giữa và tạo khoảng cách trên dưới */
-            gap: 2rem; /* Khoảng cách giữa sidebar và main content */
+            flex-grow: 1;
+            max-width: 1400px;
+            width: 95%;
+            margin: 1.5rem auto;
+            gap: 1.5rem;
         }
 
         /* Sidebar Styling */
         .dashboard-sidebar {
-            flex: 0 0 260px; /* Không co giãn, chiều rộng cố định */
+            flex: 0 0 280px;
             background-color: var(--card-bg-color);
             padding: 1.5rem;
-            border-radius: 8px;
-            box-shadow: 0 2px 8px var(--shadow-color);
-            height: fit-content; /* Chiều cao vừa với nội dung */
+            border-radius: 0.5rem;
+            box-shadow: var(--shadow-sm);
+            height: fit-content;
+            position: sticky; /* Sidebar cố định khi cuộn nội dung chính */
+            top: calc(0.75rem * 2 + 1.5rem + 1.5rem); /* Navbar height + margin-top container */
         }
 
-        .dashboard-sidebar .profile-info {
+        .dashboard-sidebar .profile-card {
             text-align: center;
-            margin-bottom: 2rem;
+            margin-bottom: 1.5rem;
             padding-bottom: 1.5rem;
             border-bottom: 1px solid var(--border-color);
         }
 
-        .dashboard-sidebar .profile-info .avatar {
-            width: 100px;
-            height: 100px;
+        .dashboard-sidebar .profile-card .avatar-wrapper {
+            position: relative;
+            width: 120px;
+            height: 120px;
+            margin: 0 auto 1rem;
+        }
+        .dashboard-sidebar .profile-card .avatar {
+            width: 100%;
+            height: 100%;
             border-radius: 50%;
             background-color: var(--primary-color);
             color: white;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 3rem; /* Kích thước chữ cái đầu */
-            margin: 0 auto 1rem;
-            border: 4px solid white; /* Viền cho avatar */
-            box-shadow: 0 0 15px rgba(0,0,0,0.15);
+            font-size: 3.5rem;
+            border: 4px solid var(--card-bg-color);
+            box-shadow: var(--shadow-sm);
         }
-        /* Nếu bạn có avatar_url */
-        .dashboard-sidebar .profile-info .avatar img {
+        .dashboard-sidebar .profile-card .avatar img {
             width: 100%;
             height: 100%;
             border-radius: 50%;
             object-fit: cover;
         }
-
-
-        .dashboard-sidebar .profile-info h3 {
-            margin-bottom: 0.3rem;
-            font-size: 1.3rem;
-            color: var(--text-color);
+        .dashboard-sidebar .profile-card .avatar-upload-btn {
+            position: absolute;
+            bottom: 5px;
+            right: 5px;
+            background-color: var(--secondary-color);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            font-size: 0.8rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: var(--shadow-sm);
+            transition: background-color 0.2s ease;
         }
-        .dashboard-sidebar .profile-info .user-email { /* Giả sử bạn có email */
-            font-size: 0.9rem;
-            color: #6c757d;
+        .dashboard-sidebar .profile-card .avatar-upload-btn:hover {
+            background-color: #1e7e34; /* Darker secondary */
+        }
+
+
+        .dashboard-sidebar .profile-card h3 {
+            margin-bottom: 0.25rem;
+            font-size: 1.25rem;
+            color: var(--text-color);
+            font-weight: 500;
+        }
+        .dashboard-sidebar .profile-card .user-email {
+            font-size: 0.875rem;
+            color: var(--text-muted-color);
+            margin-bottom: 0.5rem;
             word-break: break-all;
+        }
+         .dashboard-sidebar .profile-card .joined-date {
+            font-size: 0.8rem;
+            color: var(--text-muted-color);
         }
 
 
@@ -149,203 +204,258 @@
         }
 
         .dashboard-sidebar .sidebar-nav ul li a {
-            display: flex; /* Để icon và text thẳng hàng */
+            display: flex;
             align-items: center;
-            padding: 0.9rem 1rem;
-            color: #555;
+            padding: 0.8rem 1rem;
+            color: var(--text-muted-color);
             text-decoration: none;
-            border-radius: 6px;
+            border-radius: 0.375rem;
             transition: background-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
-            margin-bottom: 0.6rem;
+            margin-bottom: 0.5rem;
             font-weight: 500;
+            font-size: 0.95rem;
         }
         .dashboard-sidebar .sidebar-nav ul li a i {
-            margin-right: 1rem;
-            width: 20px; /* Đảm bảo icon có không gian cố định */
+            margin-right: 0.8rem;
+            width: 20px;
             text-align: center;
-            color: var(--primary-color);
+            color: var(--text-muted-color); /* Icon màu xám hơn */
+            transition: color 0.2s ease;
         }
 
         .dashboard-sidebar .sidebar-nav ul li a:hover {
-            background-color: rgba(var(--primary-color-rgb, 0, 123, 255), 0.1); /* Tạo màu nền nhạt khi hover */
+            background-color: rgba(var(--primary-color-rgb, 0, 123, 255), 0.08);
             color: var(--primary-color);
-            transform: translateX(3px);
+            transform: translateX(2px);
         }
+         .dashboard-sidebar .sidebar-nav ul li a:hover i {
+            color: var(--primary-color);
+         }
+
         .dashboard-sidebar .sidebar-nav ul li a.active {
-            background-color: var(--primary-color);
-            color: white;
-            font-weight: bold;
+            background-color: var(--sidebar-active-bg);
+            color: var(--sidebar-active-color);
+            font-weight: 700;
         }
         .dashboard-sidebar .sidebar-nav ul li a.active i {
-            color: white;
+            color: var(--sidebar-active-color);
         }
 
         /* Main Content Styling */
         .dashboard-main-content {
-            flex-grow: 1; /* Cho phép chiếm không gian còn lại */
+            flex-grow: 1;
         }
         
-        .welcome-banner {
-            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
-            color: white;
-            padding: 2rem;
-            border-radius: 8px;
-            margin-bottom: 2rem;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        .page-header {
+            margin-bottom: 1.5rem;
         }
-        .welcome-banner h2 {
-            margin-bottom: 0.5rem;
-            font-size: 1.8rem;
-            font-weight: 700;
+        .page-header h1 {
+            font-size: 1.75rem;
+            font-weight: 500;
+            color: var(--text-color);
         }
-        .welcome-banner p {
-            font-size: 1rem;
-            opacity: 0.9;
+        .page-header p {
+            color: var(--text-muted-color);
+            font-size: 0.95rem;
         }
+
 
         .widgets-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); /* Responsive grid */
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
             gap: 1.5rem;
+            margin-bottom: 2rem;
         }
 
         .widget {
             background-color: var(--card-bg-color);
-            padding: 1.5rem;
-            border-radius: 8px;
-            box-shadow: 0 2px 8px var(--shadow-color);
+            padding: 1.25rem;
+            border-radius: 0.5rem;
+            box-shadow: var(--shadow-sm);
             transition: transform 0.2s ease, box-shadow 0.2s ease;
             display: flex;
-            flex-direction: column; /* Sắp xếp nội dung widget theo cột */
+            flex-direction: column;
         }
         .widget:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.12);
+            transform: translateY(-4px);
+            box-shadow: 0 0.25rem 1rem rgba(0,0,0,.1);
         }
 
         .widget .widget-header {
             display: flex;
-            align-items: center;
-            margin-bottom: 1rem;
-            padding-bottom: 0.75rem;
-            border-bottom: 1px solid var(--border-color);
+            align-items: flex-start; /* Icon ở trên cùng */
+            margin-bottom: 0.75rem;
         }
-        .widget .widget-header i {
-            font-size: 1.5rem;
+        .widget .widget-header .widget-icon {
+            font-size: 1.25rem;
             color: var(--primary-color);
-            margin-right: 0.8rem;
-            width: 30px; /* Không gian cho icon */
-            text-align: center;
+            background-color: rgba(var(--primary-color-rgb, 0, 123, 255), 0.1);
+            border-radius: 0.375rem;
+            padding: 0.6rem;
+            margin-right: 1rem;
+            line-height: 1; /* Đảm bảo icon căn giữa */
         }
-         .widget .widget-header h3 {
+         .widget .widget-header .widget-title h3 {
             color: var(--text-color);
-            font-size: 1.1rem;
+            font-size: 1.05rem;
             margin: 0;
-            font-weight: 700;
+            font-weight: 500;
+        }
+        .widget .widget-header .widget-title p {
+            font-size: 0.8rem;
+            color: var(--text-muted-color);
+            margin:0;
         }
 
-        .widget .widget-content p {
-            font-size: 0.95rem;
-            color: #555;
-            margin-bottom: 0.5rem;
-            flex-grow: 1; /* Cho phép phần text này chiếm không gian */
+
+        .widget .widget-content {
+            flex-grow: 1;
         }
         .widget .widget-content .stat-number {
-            font-size: 2.2rem;
-            font-weight: bold;
-            color: var(--secondary-color);
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--primary-color);
             display: block;
+            margin-bottom: 0.5rem;
+        }
+         .widget .widget-content .stat-label {
+            font-size: 0.9rem;
+            color: var(--text-muted-color);
             margin-bottom: 1rem;
+         }
+        .widget .widget-content ul {
+            list-style: none;
+            padding-left: 0;
+            font-size: 0.9rem;
         }
+         .widget .widget-content ul li {
+            margin-bottom: 0.3rem;
+            color: var(--text-color);
+         }
+          .widget .widget-content ul li i {
+            margin-right: 0.5rem;
+            color: var(--secondary-color);
+          }
+
+
         .widget .widget-footer {
-            margin-top: auto; /* Đẩy footer xuống cuối widget */
+            margin-top: auto;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border-color);
+            text-align: right;
         }
-        .widget .widget-footer a.btn {
+        .widget .widget-footer a.btn-view-all {
+            color: var(--primary-color);
+            text-decoration: none;
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: color 0.2s ease;
+        }
+        .widget .widget-footer a.btn-view-all:hover {
+            color: #0056b3;
+            text-decoration: underline;
+        }
+         .widget .widget-footer a.btn-action {
             display: inline-block;
             background-color: var(--primary-color);
             color: white;
-            padding: 0.6rem 1.2rem;
+            padding: 0.5rem 1rem;
             text-decoration: none;
-            border-radius: 5px;
+            border-radius: 0.25rem;
             transition: background-color 0.2s ease, transform 0.2s ease;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             font-weight: 500;
         }
-         .widget .widget-footer a.btn i {
-            margin-right: 0.5rem;
+         .widget .widget-footer a.btn-action i {
+            margin-right: 0.4rem;
          }
-        .widget .widget-footer a.btn:hover {
-            background-color: #0056b3; /* Darker shade of primary */
-            transform: translateY(-2px);
+        .widget .widget-footer a.btn-action:hover {
+            background-color: #0056b3;
+            transform: translateY(-1px);
         }
+        
+        /* Activity Feed Styling */
+        .activity-feed .feed-item {
+            display: flex;
+            align-items: flex-start;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .activity-feed .feed-item:last-child {
+            border-bottom: none;
+        }
+        .activity-feed .feed-item .feed-icon {
+            font-size: 1rem;
+            color: var(--secondary-color);
+            margin-right: 1rem;
+            margin-top: 0.25rem;
+        }
+        .activity-feed .feed-item .feed-content p {
+            margin-bottom: 0.25rem;
+            font-size: 0.9rem;
+            color: var(--text-color);
+        }
+        .activity-feed .feed-item .feed-content .feed-time {
+            font-size: 0.75rem;
+            color: var(--text-muted-color);
+        }
+
 
         /* Footer Styling */
         .dashboard-footer {
             text-align: center;
             padding: 1.5rem;
-            margin-top: auto; /* Đẩy footer xuống cuối cùng nếu trang không đủ dài */
-            color: #777;
-            font-size: 0.9rem;
+            margin-top: auto;
+            color: var(--text-muted-color);
+            font-size: 0.875rem;
             background-color: var(--card-bg-color);
             border-top: 1px solid var(--border-color);
         }
 
         /* Responsive Adjustments */
-        @media (max-width: 992px) { /* Tablet và nhỏ hơn */
+        @media (max-width: 1200px) {
+            .dashboard-sidebar {
+                flex: 0 0 240px; /* Giảm chiều rộng sidebar một chút */
+            }
+        }
+        @media (max-width: 992px) {
             .dashboard-container {
                 flex-direction: column;
             }
             .dashboard-sidebar {
-                flex: 0 0 auto; /* Reset flex property */
+                flex: 0 0 auto;
                 width: 100%;
-                margin-bottom: 2rem;
+                margin-bottom: 1.5rem;
+                position: static; /* Bỏ sticky trên tablet */
             }
+             .page-header { text-align: center; }
         }
-        @media (max-width: 768px) { /* Mobile */
+        @media (max-width: 768px) {
             .dashboard-navbar {
-                padding: 1rem;
-                flex-direction: column;
-                gap: 0.8rem;
+                padding: 0.75rem 1rem;
             }
+            .dashboard-navbar .logo a { font-size: 1.25rem; }
             .dashboard-navbar .nav-links ul {
-                flex-direction: column;
-                gap: 0.5rem;
-                width: 100%;
-                align-items: stretch; /* Cho các link chiếm full width */
+                /* Có thể ẩn menu này và dùng menu burger trên mobile */
+                display: none; /* Tạm ẩn */
             }
-            .dashboard-navbar .nav-links ul li {
-                margin-left: 0;
-                text-align: center;
-            }
-            .dashboard-navbar .nav-links ul li a {
-                display: block; /* Cho link chiếm full width */
-            }
-
-             .widgets-grid {
-                grid-template-columns: 1fr; /* Stack widgets trên màn hình nhỏ */
-            }
-            .welcome-banner {
-                padding: 1.5rem;
-            }
-            .welcome-banner h2 {
-                font-size: 1.5rem;
-            }
+             .dashboard-container { margin: 1rem auto; width: 90%;}
+             .welcome-banner { padding: 1.5rem; }
+             .welcome-banner h2 { font-size: 1.5rem; }
+             .widgets-grid { grid-template-columns: 1fr; }
         }
 
-        /* Biến màu RGB để dùng trong rgba() cho box-shadow hoặc background-color với alpha */
+        /* Biến màu RGB để dùng trong rgba() */
         :root {
             --primary-color-rgb: 0, 123, 255;
-            --text-color-rgb: 51, 51, 51;
         }
         [data-theme="dark"] {
-            --primary-color-rgb: 51, 153, 255;
-            --text-color-rgb: 224, 224, 224;
+            --primary-color-rgb: 77, 171, 247;
         }
 
     </style>
 </head>
-<body>
-    <nav class="dashboard-navbar">
+<body data-theme="light"> <nav class="dashboard-navbar">
         <div class="logo">
             <a href="{{ url_for('home') }}">ProjectAI</a>
         </div>
@@ -353,98 +463,163 @@
             <ul>
                 <li><a href="{{ url_for('home') }}"><i class="fas fa-home"></i> Trang chủ</a></li>
                 <li><a href="{{ url_for('chat_room') }}"><i class="fas fa-comments"></i> Phòng Chat</a></li>
-                <li><a href="{{ url_for('dashboard') }}" class="active"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+                <li><a href="{{ url_for('dashboard') }}" class="active"><i class="fas fa-user-cog"></i> Dashboard</a></li>
                 {% if current_user.is_authenticated %}
                     <li><a href="{{ url_for('logout') }}"><i class="fas fa-sign-out-alt"></i> Đăng xuất</a></li>
                 {% else %}
                     <li><a href="{{ url_for('login') }}"><i class="fas fa-sign-in-alt"></i> Đăng nhập</a></li>
                 {% endif %}
+                <li><a href="#" id="theme-toggle-btn" title="Chuyển đổi giao diện"><i class="fas fa-adjust"></i></a></li>
             </ul>
         </div>
     </nav>
 
     <div class="dashboard-container">
         <aside class="dashboard-sidebar">
-            <div class="profile-info">
-                <div class="avatar">
-                    {% if current_user.avatar_url %}
-                        <img src="{{ current_user.avatar_url }}" alt="Avatar của {{ username }}">
-                    {% else %}
-                        {{ username[0]|upper if username else 'U' }}
-                    {% endif %}
+            <div class="profile-card">
+                <div class="avatar-wrapper">
+                    <div class="avatar">
+                        {% if current_user.avatar_url %}
+                            <img src="{{ current_user.avatar_url }}" alt="Avatar của {{ current_user.username }}">
+                        {% else %}
+                            {{ current_user.username[0]|upper if current_user.username else 'U' }}
+                        {% endif %}
+                    </div>
+                    <button class="avatar-upload-btn" title="Thay đổi ảnh đại diện"><i class="fas fa-camera"></i></button>
                 </div>
-                <h3>{{ username }}</h3>
-                <p>Ngày tham gia: {{ current_user.created_at.strftime('%d/%m/%Y') if current_user.created_at else 'N/A' }}</p>
+                <h3>{{ current_user.username }}</h3>
+                <p class="joined-date">Tham gia từ: {{ current_user.created_at.strftime('%d/%m/%Y') if current_user.created_at else 'Không rõ' }}</p>
             </div>
             <nav class="sidebar-nav">
                 <ul>
-                    <li><a href="{{ url_for('dashboard') }}" class="active"><i class="fas fa-user-circle"></i> Tổng quan</a></li>
-                    <li><a href="#"><i class="fas fa-envelope"></i> Tin nhắn <span class="badge">(3)</span></a></li> <li><a href="#"><i class="fas fa-users"></i> Bạn bè</a></li> <li><a href="#"><i class="fas fa-chart-line"></i> Thống kê Hoạt động</a></li> <li><a href="#"><i class="fas fa-cog"></i> Cài đặt Tài khoản</a></li> <li><a href="#"><i class="fas fa-question-circle"></i> Trợ giúp</a></li> </ul>
+                    <li><a href="{{ url_for('dashboard') }}" class="active"><i class="fas fa-tachometer-alt"></i> Tổng quan</a></li>
+                    <li><a href="#"><i class="fas fa-user-edit"></i> Chỉnh sửa Hồ sơ</a></li>
+                    <li><a href="#"><i class="fas fa-envelope"></i> Tin nhắn <span class="badge bg-danger text-white ms-auto">3</span></a></li>
+                    <li><a href="#"><i class="fas fa-users"></i> Quản lý Bạn bè</a></li>
+                    <li><a href="#"><i class="fas fa-bell"></i> Thông báo</a></li>
+                    <li><a href="#"><i class="fas fa-cog"></i> Cài đặt Tài khoản</a></li>
+                    <li><a href="#"><i class="fas fa-shield-alt"></i> Bảo mật & Riêng tư</a></li>
+                    <li><a href="#"><i class="fas fa-life-ring"></i> Trợ giúp & Hỗ trợ</a></li>
+                </ul>
             </nav>
         </aside>
 
         <main class="dashboard-main-content">
-            <div class="welcome-banner">
-                <h2>Chào mừng trở lại, {{ username }}!</h2>
-                <p>Đây là không gian cá nhân của bạn. Hãy kiểm tra các hoạt động và tùy chỉnh cài đặt nhé.</p>
+            <div class="page-header">
+                <h1>Bảng điều khiển</h1>
+                <p>Chào mừng, {{ current_user.username }}! Quản lý thông tin và hoạt động của bạn tại đây.</p>
             </div>
 
             <div class="widgets-grid">
                 <div class="widget">
                     <div class="widget-header">
-                        <i class="fas fa-paper-plane"></i>
-                        <h3>Tin nhắn Đã Gửi</h3>
+                        <span class="widget-icon"><i class="fas fa-paper-plane"></i></span>
+                        <div class="widget-title">
+                            <h3>Tin nhắn Đã Gửi</h3>
+                            <p>Thống kê tin nhắn công khai</p>
+                        </div>
                     </div>
                     <div class="widget-content">
-                        <span class="stat-number">{{ public_message_count }}</span>
-                        <p>Tổng số tin nhắn công khai bạn đã gửi trong các phòng chat.</p>
+                        <span class="stat-number">{{ public_message_count if public_message_count is defined else '0' }}</span>
+                        <p class="stat-label">Tổng số tin nhắn công khai đã gửi.</p>
                     </div>
                     <div class="widget-footer">
-                        <a href="{{ url_for('chat_room') }}" class="btn"><i class="fas fa-plus-circle"></i> Gửi Tin Nhắn Mới</a>
+                        <a href="{{ url_for('chat_room') }}" class="btn-action"><i class="fas fa-comments"></i> Vào phòng chat</a>
                     </div>
                 </div>
 
                 <div class="widget">
                      <div class="widget-header">
-                        <i class="fas fa-user-clock"></i>
-                        <h3>Thời Gian Hoạt Động</h3>
+                        <span class="widget-icon"><i class="fas fa-user-friends"></i></span>
+                        <div class="widget-title">
+                            <h3>Bạn bè & Kết nối</h3>
+                            <p>Quản lý danh sách bạn bè</p>
+                        </div>
                     </div>
                     <div class="widget-content">
-                        <span class="stat-number">N/A</span>
-                        <p>Tổng thời gian bạn đã hoạt động trên hệ thống.</p>
+                        <span class="stat-number">0</span>
+                        <p class="stat-label">Số lượng bạn bè hiện tại.</p>
+                         <ul>
+                            <li><i class="fas fa-user-plus"></i> Tìm bạn mới</li>
+                            <li><i class="fas fa-user-check"></i> Lời mời kết bạn</li>
+                        </ul>
                     </div>
                      <div class="widget-footer">
-                        <a href="#" class="btn"><i class="fas fa-history"></i> Xem Chi Tiết</a>
+                        <a href="#" class="btn-view-all">Xem tất cả bạn bè <i class="fas fa-arrow-right"></i></a>
                     </div>
                 </div>
                 
                 <div class="widget">
                     <div class="widget-header">
-                        <i class="fas fa-bell"></i>
-                        <h3>Thông Báo Mới</h3>
+                        <span class="widget-icon"><i class="fas fa-chart-pie"></i></span>
+                        <div class="widget-title">
+                            <h3>Thống kê Hoạt động</h3>
+                            <p>Phân tích sử dụng của bạn</p>
+                        </div>
                     </div>
                     <div class="widget-content">
-                         <span class="stat-number">0</span>
-                        <p>Bạn không có thông báo mới nào chưa đọc.</p>
+                         <span class="stat-number">N/A</span>
+                        <p class="stat-label">Thời gian trực tuyến tuần này.</p>
+                        <p>Biểu đồ hoạt động (sẽ cập nhật).</p>
                     </div>
                     <div class="widget-footer">
-                        <a href="#" class="btn"><i class="fas fa-list-alt"></i> Xem Tất Cả Thông Báo</a>
+                        <a href="#" class="btn-view-all">Xem báo cáo chi tiết <i class="fas fa-arrow-right"></i></a>
                     </div>
                 </div>
-
-                <div class="widget">
+                 <div class="widget">
                     <div class="widget-header">
-                        <i class="fas fa-shield-alt"></i>
-                        <h3>Bảo Mật Tài Khoản</h3>
+                        <span class="widget-icon"><i class="fas fa-shield-check"></i></span>
+                        <div class="widget-title">
+                            <h3>Cấp độ Tài khoản</h3>
+                            <p>Tiến trình & thành tựu</p>
+                        </div>
                     </div>
                     <div class="widget-content">
-                        <p>Đảm bảo tài khoản của bạn luôn an toàn. Cập nhật mật khẩu định kỳ.</p>
-                        </div>
+                        <span class="stat-number">Mới</span>
+                        <p class="stat-label">Cấp độ hiện tại của bạn.</p>
+                        <p>Điểm kinh nghiệm: 150/1000 XP</p>
+                    </div>
                      <div class="widget-footer">
-                        <a href="#" class="btn"><i class="fas fa-key"></i> Đổi Mật Khẩu</a>
+                        <a href="#" class="btn-view-all">Xem thành tựu <i class="fas fa-trophy"></i></a>
                     </div>
                 </div>
             </div>
+
+            <div class="widget"> <div class="widget-header">
+                    <span class="widget-icon"><i class="fas fa-history"></i></span>
+                    <div class="widget-title">
+                        <h3>Hoạt động Gần đây</h3>
+                        <p>Những gì đã xảy ra</p>
+                    </div>
+                </div>
+                <div class="widget-content activity-feed">
+                    <div class="feed-item">
+                        <i class="fas fa-comment feed-icon"></i>
+                        <div class="feed-content">
+                            <p>Bạn đã gửi một tin nhắn trong phòng chat công cộng.</p>
+                            <span class="feed-time">2 giờ trước</span>
+                        </div>
+                    </div>
+                    <div class="feed-item">
+                        <i class="fas fa-user-edit feed-icon" style="color: var(--secondary-color);"></i>
+                        <div class="feed-content">
+                            <p>Bạn đã cập nhật thông tin hồ sơ.</p>
+                            <span class="feed-time">1 ngày trước</span>
+                        </div>
+                    </div>
+                     <div class="feed-item">
+                        <i class="fas fa-unlock-alt feed-icon" style="color: var(--danger-color);"></i>
+                        <div class="feed-content">
+                            <p>Đăng nhập thành công từ một thiết bị mới.</p>
+                            <span class="feed-time">3 ngày trước</span>
+                        </div>
+                    </div>
+                </div>
+                 <div class="widget-footer">
+                    <a href="#" class="btn-view-all">Xem tất cả hoạt động <i class="fas fa-arrow-right"></i></a>
+                </div>
+            </div>
+
         </main>
     </div>
 
@@ -453,21 +628,43 @@
     </footer>
 
     <script>
-        // Logic cơ bản cho theme toggle (nếu bạn không dùng file JS riêng)
-        // const themeToggle = document.querySelector('.theme-toggle-icon'); // Cần thêm icon này vào navbar
-        // if (themeToggle) {
-        //     themeToggle.addEventListener('click', () => {
-        //         document.body.dataset.theme = document.body.dataset.theme === 'dark' ? 'light' : 'dark';
-        //         localStorage.setItem('theme', document.body.dataset.theme);
-        //         // Cập nhật icon nếu cần
-        //     });
-        //     // Khôi phục theme đã lưu
-        //     const savedTheme = localStorage.getItem('theme');
-        //     if (savedTheme) {
-        //         document.body.dataset.theme = savedTheme;
-        //     }
-        // }
+        // JavaScript cơ bản cho dashboard (ví dụ: theme toggle)
+        const themeToggleButton = document.getElementById('theme-toggle-btn');
+        if (themeToggleButton) {
+            // Khôi phục theme đã lưu
+            const savedTheme = localStorage.getItem('theme_preference_v2') || 
+                               (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            document.body.dataset.theme = savedTheme;
+            if(savedTheme === 'dark'){
+                 themeToggleButton.querySelector('i').classList.remove('fa-adjust');
+                 themeToggleButton.querySelector('i').classList.add('fa-sun'); // Hoặc fa-moon tùy logic
+            } else {
+                 themeToggleButton.querySelector('i').classList.remove('fa-sun');
+                 themeToggleButton.querySelector('i').classList.add('fa-adjust');
+            }
+
+
+            themeToggleButton.addEventListener('click', (e) => {
+                e.preventDefault();
+                let currentTheme = document.body.dataset.theme;
+                let newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+                document.body.dataset.theme = newTheme;
+                localStorage.setItem('theme_preference_v2', newTheme);
+
+                // Cập nhật icon
+                const icon = themeToggleButton.querySelector('i');
+                if (newTheme === 'dark') {
+                    icon.classList.remove('fa-adjust');
+                    icon.classList.add('fa-sun');
+                } else {
+                    icon.classList.remove('fa-sun');
+                    icon.classList.add('fa-adjust');
+                }
+            });
+        }
+
+        // Placeholder cho các chức năng JS khác
+        // Ví dụ: Xử lý upload avatar, tải thêm dữ liệu cho activity feed, ...
     </script>
 </body>
 </html>
-
