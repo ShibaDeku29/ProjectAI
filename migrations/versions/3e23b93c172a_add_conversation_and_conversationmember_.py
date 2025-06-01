@@ -33,9 +33,6 @@ def upgrade():
         sa.PrimaryKeyConstraint('conversation_id', 'user_id')
     )
 
-    # Create a default conversation for existing messages
-    op.execute("INSERT INTO conversation (name, is_group, created_at) VALUES ('Legacy Public Chat', TRUE, CURRENT_TIMESTAMP)")
-
     # Add columns to message table (nullable initially)
     with op.batch_alter_table('message', schema=None) as batch_op:
         batch_op.drop_index('ix_message_timestamp')
@@ -43,19 +40,91 @@ def upgrade():
         batch_op.add_column(sa.Column('sender_id', sa.Integer(), nullable=True))
         batch_op.add_column(sa.Column('is_read', sa.Boolean(), nullable=True, server_default='0'))
 
-    # Backfill conversation_id and sender_id for existing messages
+    # Delete messages with invalid username
+    op.execute("""
+        DELETE FROM message
+        WHERE username NOT IN (SELECT username FROM "user");
+    """)
+
+    # Create a default public conversation for public messages
+    op.execute("INSERT INTO conversation (name, is_group, created_at) VALUES ('Legacy Public Chat', TRUE, CURRENT_TIMESTAMP)")
+
+    # Backfill public messages
     op.execute("""
         UPDATE message
         SET conversation_id = (SELECT id FROM conversation WHERE name = 'Legacy Public Chat' LIMIT 1),
             sender_id = (SELECT id FROM "user" WHERE username = message.username LIMIT 1)
         WHERE is_private = FALSE
     """)
+
+    # Create conversations for private message pairs
+    op.execute("""
+        INSERT INTO conversation (is_group, created_at)
+        SELECT FALSE, CURRENT_TIMESTAMP
+        FROM (
+            SELECT DISTINCT LEAST(username, recipient_username) AS user1,
+                            GREATEST(username, recipient_username) AS user2
+            FROM message
+            WHERE is_private = TRUE AND recipient_username IS NOT NULL
+        ) pairs
+    """)
+
+    # Add conversation members for private conversations
+    op.execute("""
+        INSERT INTO conversation_member (conversation_id, user_id, joined_at)
+        SELECT c.id, u.id, CURRENT_TIMESTAMP
+        FROM conversation c
+        CROSS JOIN (
+            SELECT DISTINCT username FROM message WHERE is_private = TRUE
+            UNION
+            SELECT DISTINCT recipient_username FROM message WHERE is_private = TRUE AND recipient_username IS NOT NULL
+        ) m
+        JOIN "user" u ON u.username = m.username
+        WHERE c.is_group = FALSE
+        AND EXISTS (
+            SELECT 1
+            FROM message m2
+            WHERE m2.is_private = TRUE
+            AND (
+                (m2.username = u.username AND m2.recipient_username IN (
+                    SELECT username FROM "user" WHERE id IN (
+                        SELECT user_id FROM conversation_member WHERE conversation_id = c.id
+                    )
+                ))
+                OR
+                (m2.recipient_username = u.username AND m2.username IN (
+                    SELECT username FROM "user" WHERE id IN (
+                        SELECT user_id FROM conversation_member WHERE conversation_id = c.id
+                    )
+                ))
+            )
+        )
+    """)
+
+    # Backfill private messages
     op.execute("""
         UPDATE message
-        SET conversation_id = (SELECT id FROM conversation WHERE name = 'Legacy Public Chat' LIMIT 1),
-            sender_id = (SELECT id FROM "user" WHERE username = message.username LIMIT 1)
+        SET conversation_id = (
+            SELECT c.id
+            FROM conversation c
+            JOIN conversation_member cm1 ON cm1.conversation_id = c.id
+            JOIN conversation_member cm2 ON cm2.conversation_id = c.id AND cm2.user_id != cm1.user_id
+            JOIN "user" u1 ON u1.id = cm1.user_id
+            JOIN "user" u2 ON u2.id = cm2.user_id
+            WHERE c.is_group = FALSE
+            AND (
+                (u1.username = message.username AND u2.username = message.recipient_username)
+                OR
+                (u1.username = message.recipient_username AND u2.username = message.username)
+            )
+            LIMIT 1
+        ),
+        sender_id = (SELECT id FROM "user" WHERE username = message.username LIMIT 1)
         WHERE is_private = TRUE
     """)
+
+    # Remove any messages that still have NULL conversation_id or sender_id
+    op.execute("DELETE FROM message WHERE conversation_id IS NULL OR sender_id IS NULL")
 
     # Enforce NOT NULL constraints and add foreign keys
     with op.batch_alter_table('message', schema=None) as batch_op:
