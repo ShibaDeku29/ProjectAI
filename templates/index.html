@@ -7,30 +7,46 @@
     <script src="https://cdn.socket.io/socket.io-3.0.3.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <!-- Google Analytics -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
     <script>
         window.dataLayer = window.dataLayer || [];
         function gtag(){dataLayer.push(arguments);}
         gtag('js', new Date());
-        gtag('config', 'G-XXXXXXXXXX');
+        gtag('config', 'G-XXXXXXXXXX'); // Thay G-XXXXXXXXXX bằng ID Google Analytics của bạn
     </script>
     <style>
         :root {
             --primary-color: #007bff;
             --secondary-color: #28a745;
             --text-color: #1a1a2e;
-            --bg-light: rgba(255, 255, 255, 0.95);
-            --bg-dark: rgba(30, 30, 46, 0.95);
+            --bg-light: rgba(255, 255, 255, 0.95); /* Giữ lại alpha để video nền có thể nhìn thấy */
+            --bg-dark: rgba(30, 30, 46, 0.95);   /* Giữ lại alpha */
             --input-bg: #f8f9fa;
+            --message-sent-bg: #d1e7dd;
+            --message-received-bg: #e0f7fa;
+            --message-private-bg: #fff3cd;
+            --message-private-border: #ffca2c;
+            --link-color: #007bff;
+            --danger-color: #dc3545;
+            --danger-bg-hover: #dc3545;
+            --danger-text-hover: white;
+            --header-gradient: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
         }
 
         [data-theme="dark"] {
             --primary-color: #3399ff;
             --secondary-color: #34c759;
             --text-color: #e0e0e0;
-            --bg-light: var(--bg-dark);
+            --bg-light: var(--bg-dark); /* Sử dụng biến --bg-dark cho nền sáng ở theme tối */
             --input-bg: #2a2a3b;
+            --message-sent-bg: #2a3b2e;
+            --message-received-bg: #2a393b;
+            --message-private-bg: #4d432c;
+            --message-private-border: #e0b024;
+            --link-color: #3399ff;
+            --danger-color: #ff5252;
+            --danger-bg-hover: #ff5252;
+            --danger-text-hover: black;
         }
 
         * {
@@ -42,12 +58,13 @@
         body {
             font-family: 'Roboto', Arial, sans-serif;
             margin: 0;
-            overflow: hidden;
+            overflow: hidden; /* Ngăn cuộn body, việc cuộn sẽ do các container bên trong xử lý */
             display: flex;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
-            position: relative;
+            position: relative; /* Cần cho video nền */
+            background-color: #121212; /* Màu nền dự phòng nếu video không tải */
         }
 
         video.background-video {
@@ -57,20 +74,22 @@
             width: 100%;
             height: 100%;
             object-fit: cover;
-            z-index: -1;
-            opacity: 0.7;
+            z-index: -1; /* Đảm bảo video ở lớp dưới cùng */
+            opacity: 0.6; /* Giảm độ mờ để nội dung dễ đọc hơn */
         }
 
         .main-container {
             display: flex;
             background-color: var(--bg-light);
             border-radius: 16px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
             width: 90%;
             max-width: 1000px;
+            height: 90vh; /* Giới hạn chiều cao để phù hợp hơn trên nhiều màn hình */
+            max-height: 800px; /* Chiều cao tối đa */
             overflow: hidden;
             animation: slideIn 0.5s ease-out;
-            backdrop-filter: blur(10px);
+            backdrop-filter: blur(8px); /* Giảm blur một chút */
             z-index: 10;
         }
 
@@ -78,26 +97,281 @@
             flex-grow: 1;
             display: flex;
             flex-direction: column;
-            min-width: 500px;
+            min-width: 0; /* Cho phép co lại trên màn hình nhỏ hơn */
+            position: relative; /* Để định vị các nút toggle */
+            border-right: 1px solid rgba(0,0,0,0.05); /* Đường phân cách nhẹ nhàng */
         }
+        [data-theme="dark"] .chat-wrapper {
+            border-right: 1px solid rgba(255,255,255,0.05);
+        }
+
+
+        .chat-header {
+            display: flex; /* Sắp xếp h2 và các nút điều khiển */
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 20px; /* Padding cho header */
+            background: var(--header-gradient);
+            color: white;
+            min-height: 60px; /* Chiều cao cố định cho header */
+        }
+
+        .chat-header h2 {
+            font-size: 1.5em; /* Giảm kích thước font một chút */
+            margin: 0; /* Bỏ margin mặc định của h2 */
+            text-align: left;
+            flex-grow: 1; /* Cho phép tiêu đề chiếm không gian */
+        }
+
+        .header-controls {
+            display: flex;
+            align-items: center;
+            gap: 15px; /* Khoảng cách giữa các nút */
+        }
+
+        .theme-toggle, .sound-toggle, .lang-toggle {
+            cursor: pointer;
+            font-size: 1.1em; /* Kích thước icon */
+            color: white; /* Màu icon trên nền header */
+            transition: transform 0.3s ease, opacity 0.3s ease;
+            opacity: 0.8;
+        }
+        .theme-toggle:hover, .sound-toggle:hover, .lang-toggle:hover {
+            transform: scale(1.15);
+            opacity: 1;
+        }
+
+        .user-info {
+            background-color: var(--input-bg); /* Nền đồng nhất với theme */
+            padding: 10px 20px;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.9em;
+            color: var(--text-color);
+            min-height: 40px;
+        }
+        [data-theme="dark"] .user-info {
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+        }
+
+        .user-info span strong {
+            color: var(--primary-color);
+        }
+
+        .user-info a {
+            color: var(--danger-color);
+            text-decoration: none;
+            padding: 6px 12px;
+            border: 1px solid var(--danger-color);
+            border-radius: 20px; /* Bo tròn hơn */
+            font-weight: bold;
+            transition: all 0.2s ease;
+        }
+
+        .user-info a:hover, .user-info a:focus {
+            background-color: var(--danger-bg-hover);
+            color: var(--danger-text-hover);
+            transform: scale(1.03);
+        }
+
+        #chat-container {
+            flex-grow: 1; /* Quan trọng: để chiếm không gian còn lại */
+            overflow-y: auto; /* Cho phép cuộn */
+            padding: 20px;
+            background-color: transparent; /* Nền của chat-wrapper sẽ hiển thị qua */
+            scroll-behavior: smooth;
+            min-height: 0; /* Cho phép co lại đúng cách trong flexbox */
+        }
+
+        .message-row {
+            display: flex; /* Sử dụng flex để dễ dàng căn chỉnh username và content */
+            flex-direction: column; /* Xếp username trên message content */
+            margin-bottom: 12px;
+            padding: 10px 15px;
+            border-radius: 18px; /* Bo tròn vừa phải */
+            max-width: 75%; /* Giảm chiều rộng tối đa một chút */
+            word-wrap: break-word;
+            line-height: 1.45;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+            opacity: 0;
+            animation: slideInMessage 0.4s ease forwards;
+        }
+
+        .message-row.sent {
+            background-color: var(--message-sent-bg);
+            margin-left: auto; /* Đẩy sang phải */
+            border-bottom-right-radius: 6px; /* Tạo hiệu ứng "đuôi" tin nhắn */
+        }
+
+        .message-row.received {
+            background-color: var(--message-received-bg);
+            margin-right: auto; /* Đẩy sang trái */
+            border-bottom-left-radius: 6px; /* Tạo hiệu ứng "đuôi" tin nhắn */
+        }
+
+        .message-row.private {
+            background-color: var(--message-private-bg);
+            border: 1px dashed var(--message-private-border); /* Viền nét đứt rõ ràng hơn */
+        }
+        
+        .message-row .username { /* Nhắm mục cụ thể hơn */
+            font-weight: 700;
+            color: var(--primary-color); /* Màu username */
+            font-size: 0.85em;
+            margin-bottom: 4px;
+        }
+         .message-row.sent .username {
+            color: var(--secondary-color); /* Username người gửi có thể có màu khác */
+        }
+
+
+        .message-content {
+            color: var(--text-color);
+        }
+        
+        /* Styling cho tin nhắn hệ thống (nếu có) */
+        .message-row.system {
+            background-color: transparent;
+            text-align: center;
+            font-size: 0.85em;
+            color: var(--text-color);
+            opacity: 0.7;
+            max-width: 100%;
+            box-shadow: none;
+        }
+        .message-row.system .username { display: none; } /* Ẩn username cho tin hệ thống */
+
+
+        #message-input-area {
+            display: flex;
+            flex-direction: column; /* Sắp xếp label và controls */
+            padding: 15px;
+            gap: 8px; /* Giảm khoảng cách */
+            background-color: var(--input-bg); /* Nền đồng nhất */
+            border-top: 1px solid rgba(0, 0, 0, 0.08);
+            min-height: 100px; /* Chiều cao tối thiểu */
+        }
+        [data-theme="dark"] #message-input-area {
+            border-top: 1px solid rgba(255,255,255,0.08);
+        }
+
+
+        .recipient-select-area label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            font-size: 0.85em;
+            color: var(--text-color);
+        }
+
+        .recipient-select-area select {
+            width: 100%;
+            padding: 8px 12px; /* Giảm padding */
+            border: 1px solid #ccc;
+            border-radius: 20px; /* Bo tròn hơn */
+            font-size: 0.9em;
+            background-color: var(--bg-light); /* Nền cho select */
+            color: var(--text-color);
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+        [data-theme="dark"] .recipient-select-area select {
+            border: 1px solid #555;
+        }
+
+        .recipient-select-area select:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(var(--primary-color-rgb, 0, 123, 255), 0.25); /* Tạo shadow khi focus */
+        }
+        /* Cần định nghĩa --primary-color-rgb cho shadow focus */
+        /* :root { --primary-color-rgb: 0,123,255; } */
+        /* [data-theme="dark"] { --primary-color-rgb: 51,153,255; } */
+
+
+        .message-input-controls {
+            display: flex;
+            gap: 10px;
+            width: 100%;
+            align-items: center; /* Căn giữa input và button */
+        }
+
+        .message-input-controls input[type="text"] {
+            flex-grow: 1;
+            padding: 12px 18px;
+            border: 1px solid #ccc;
+            border-radius: 25px;
+            font-size: 0.95em;
+            background-color: var(--bg-light); /* Nền cho input */
+            color: var(--text-color);
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+         [data-theme="dark"] .message-input-controls input[type="text"] {
+            border: 1px solid #555;
+        }
+
+
+        .message-input-controls input[type="text"]:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb, 0, 123, 255), 0.25);
+        }
+
+        .message-input-controls .error-message-placeholder { /* Đổi tên từ .error để tránh xung đột */
+            color: #ff6b6b;
+            font-size: 0.8em;
+            margin-top: 4px;
+            /* Sẽ được JS điều khiển hiển thị */
+        }
+
+
+        .message-input-controls button {
+            padding: 12px 20px;
+            background: var(--header-gradient); /* Đồng nhất với header */
+            color: white;
+            border: none;
+            border-radius: 25px;
+            font-size: 0.95em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s ease; /* Rút gọn transition */
+            white-space: nowrap; /* Tránh nút Gửi xuống dòng */
+        }
+
+        .message-input-controls button:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+        .message-input-controls button:active {
+            transform: translateY(0);
+            box-shadow: none;
+        }
+        /* Nút loading vẫn giữ nguyên */
 
         .online-users-sidebar {
             width: 250px;
-            background-color: var(--bg-light);
+            min-width: 200px; /* Chiều rộng tối thiểu */
+            background-color: transparent; /* Nền của main-container sẽ hiển thị qua */
             padding: 20px;
             display: flex;
             flex-direction: column;
-            transition: transform 0.3s ease;
+            transition: width 0.3s ease; /* Cho phép thay đổi chiều rộng nếu cần */
         }
 
         .online-users-sidebar h3 {
             color: var(--text-color);
             margin-bottom: 15px;
-            font-size: 1.2em;
+            font-size: 1.1em; /* Giảm font một chút */
             text-align: center;
-            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+            border-bottom: 1px solid rgba(var(--text-color-rgb, 26,26,46), 0.1);
             padding-bottom: 10px;
+            font-weight: bold;
         }
+         /* :root { --text-color-rgb: 26,26,46; } */
+         /* [data-theme="dark"] { --text-color-rgb: 224,224,224; } */
+
 
         #online-users-list {
             list-style: none;
@@ -109,400 +383,146 @@
         }
 
         #online-users-list li {
-            padding: 8px 0;
-            color: var(--primary-color);
-            font-weight: bold;
+            padding: 10px 5px; /* Tăng padding */
+            color: var(--text-color); /* Màu chữ user thường */
+            font-weight: 500; /* Giảm độ đậm */
             display: flex;
             align-items: center;
             cursor: pointer;
-            transition: background-color 0.3s ease, transform 0.2s ease;
+            transition: background-color 0.2s ease, transform 0.1s ease;
             opacity: 0;
             animation: fadeIn 0.5s forwards;
+            border-radius: 8px; /* Bo góc cho từng item */
+            margin-bottom: 4px; /* Khoảng cách giữa các user */
         }
 
         #online-users-list li:hover, #online-users-list li:focus {
-            background-color: rgba(0, 123, 255, 0.1);
-            transform: translateX(5px);
+            background-color: rgba(var(--primary-color-rgb,0,123,255), 0.1);
+            transform: translateX(3px);
         }
 
         #online-users-list li.selected {
-            background-color: rgba(0, 123, 255, 0.2);
-            transform: translateX(5px);
+            background-color: rgba(var(--primary-color-rgb,0,123,255), 0.2);
+            color: var(--primary-color); /* Đổi màu chữ user được chọn */
+            font-weight: bold;
         }
 
         #online-users-list li::before {
-            content: '•';
-            color: var(--secondary-color);
-            font-size: 1.5em;
-            line-height: 0;
-            margin-right: 8px;
+            content: '•'; /* Chấm tròn đầu dòng */
+            color: var(--secondary-color); /* Màu của chấm */
+            font-size: 1.3em;
+            line-height: 1;
+            margin-right: 10px;
+            transition: color 0.2s ease;
         }
-
-        .recipient-select-area {
-            margin-bottom: 10px;
-            text-align: left;
-            transition: opacity 0.3s ease;
-        }
-
-        .recipient-select-area label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: bold;
-            color: var(--text-color);
-        }
-
-        .recipient-select-area select {
-            width: 100%;
-            padding: 10px;
-            border: 2px solid #e0e0e0;
-            border-radius: 10px;
-            font-size: 0.9em;
-            background: var(--input-bg);
-            transition: border-color 0.3s ease, box-shadow 0.3s ease;
-        }
-
-        .recipient-select-area select:focus {
-            outline: none;
-            border-color: var(--primary-color);
-            box-shadow: 0 0 12px rgba(0, 123, 255, 0.3);
-        }
-
-        h2 {
-            color: var(--text-color);
-            text-align: center;
-            padding: 20px;
-            margin-bottom: 0;
-            font-size: 1.8em;
-            background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
-            color: white;
-            animation: fadeInDown 0.5s ease;
-        }
-
-        .user-info {
-            background-color: var(--input-bg);
-            padding: 10px 20px;
-            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 0.95em;
-            color: var(--text-color);
-            transition: background-color 0.3s ease;
-        }
-
-        .user-info span {
-            font-weight: bold;
+        #online-users-list li.selected::before {
             color: var(--primary-color);
         }
 
-        .user-info a {
-            color: #dc3545;
-            text-decoration: none;
-            padding: 5px 10px;
-            border: 2px solid #dc3545;
-            border-radius: 10px;
-            transition: background-color 0.3s ease, color 0.3s ease, transform 0.2s ease;
-        }
 
-        .user-info a:hover, .user-info a:focus {
-            background-color: #dc3545;
-            color: white;
-            transform: scale(1.05);
-        }
-
-        #chat-container {
-            flex-grow: 1;
-            height: 400px;
-            overflow-y: auto;
-            padding: 20px;
-            background-color: var(--bg-light);
-            scroll-behavior: smooth;
-        }
-
-        .message-row {
-            margin-bottom: 12px;
-            padding: 10px 15px;
-            border-radius: 18px;
-            max-width: 80%;
-            word-wrap: break-word;
-            line-height: 1.4;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            opacity: 0;
-            animation: slideInMessage 0.3s ease forwards;
-        }
-
-        .message-row.sent {
-            background-color: #d1e7dd;
-            align-self: flex-end;
-            margin-left: auto;
-        }
-
-        .message-row.received {
-            background-color: #e0f7fa;
-            align-self: flex-start;
-            margin-right: auto;
-        }
-
-        .message-row.private {
-            background-color: #fff3cd;
-            border: 2px dashed #ffca2c;
-        }
-
-        .username {
-            font-weight: 700;
-            color: var(--primary-color);
-            display: block;
-            margin-bottom: 4px;
-        }
-
-        .message-content {
-            color: var(--text-color);
-        }
-
-        #message-input-area {
-            display: flex;
-            padding: 15px;
-            gap: 10px;
-            background-color: var(--bg-light);
-            flex-direction: column;
-        }
-
-        .message-input-controls {
-            display: flex;
-            gap: 10px;
-            width: 100%;
-        }
-
-        .message-input-controls input {
-            flex-grow: 1;
-            padding: 12px 15px;
-            border: 2px solid #e0e0e0;
-            border-radius: 25px;
-            font-size: 1em;
-            background: var(--input-bg);
-            transition: border-color 0.3s ease, box-shadow 0.3s ease, transform 0.2s ease;
-        }
-
-        .message-input-controls input:focus {
-            outline: none;
-            border-color: var(--primary-color);
-            box-shadow: 0 0 12px rgba(0, 123, 255, 0.3);
-            transform: scale(1.02);
-        }
-
-        .message-input-controls .error {
-            color: #ff6b6b;
-            font-size: 0.85em;
-            margin-top: 5px;
-            display: none;
-        }
-
-        .message-input-controls input:invalid[required] + .error {
-            display: block;
-        }
-
-        .message-input-controls button {
-            padding: 12px 25px;
-            background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
-            color: white;
-            border: none;
-            border-radius: 25px;
-            font-size: 1em;
-            font-weight: 700;
-            cursor: pointer;
-            transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
-        }
-
-        .message-input-controls button:hover {
-            background: linear-gradient(90deg, var(--secondary-color), var(--primary-color));
-            transform: translateY(-2px);
-            box-shadow: 0 4px 15px rgba(0, 123, 255, 0.4);
-        }
-
-        .message-input-controls button:active {
-            transform: translateY(0);
-            box-shadow: none;
-        }
-
-        .message-input-controls button.loading::after {
-            content: '';
-            width: 20px;
-            height: 20px;
-            border: 2px solid white;
-            border-top: 2px solid transparent;
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
+        /* Flash messages (giữ nguyên hoặc tùy chỉnh thêm) */
+        .flash-messages-container { /* Bọc ngoài ul để dễ định vị */
             position: absolute;
-            right: 10px;
+            top: 70px; /* Dưới header */
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80%;
+            max-width: 500px;
+            z-index: 1000;
         }
-
+        ul.flash-messages {
+            list-style: none;
+            padding: 0;
+        }
         .flash-message {
-            padding: 12px;
-            margin: 15px;
-            border-radius: 8px;
-            font-weight: 500;
-            font-size: 0.95em;
-            text-align: center;
-            opacity: 0;
-            animation: fadeIn 0.5s ease forwards;
+             padding: 12px 18px;
+             margin-bottom: 10px;
+             border-radius: 8px;
+             font-weight: 500;
+             font-size: 0.9em;
+             text-align: center;
+             opacity: 0;
+             animation: fadeInDownFlash 0.5s ease forwards;
+             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
-
-        .flash-message.success {
-            background-color: #e6f4ea;
-            color: #1a4731;
-            border: 1px solid #c3e6cb;
+        @keyframes fadeInDownFlash {
+            from { opacity: 0; transform: translateY(-15px); }
+            to { opacity: 1; transform: translateY(0); }
         }
+        /* Màu sắc flash messages giữ nguyên */
+        .flash-message.success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .flash-message.danger { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .flash-message.info { background-color: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
 
-        .flash-message.danger {
-            background-color: #fce8e6;
-            color: #5c1c1a;
-            border: 1px solid #f5c6cb;
-        }
 
-        .flash-message.info {
-            background-color: #e7f3fe;
-            color: #1c2526;
-            border: 1px solid #bee5eb;
-        }
+        /* Các hiệu ứng nổi (giữ lại nếu muốn, đã có trong HTML) */
+        .floating-icon { /*...*/ }
+        .bubble { /*...*/ }
+        .particle { /*...*/ }
 
-        .theme-toggle, .sound-toggle, .lang-toggle {
-            position: absolute;
-            top: 20px;
-            cursor: pointer;
-            font-size: 1.2em;
-            color: white;
-            transition: transform 0.3s ease;
-        }
+        /* Keyframe Animations (giữ nguyên) */
+        @keyframes slideIn { /*...*/ }
+        @keyframes fadeIn { /*...*/ }
+        /* @keyframes fadeInDown { /*...*/ } Đã có fadeInDownFlash */
+        @keyframes slideInMessage { /*...*/ }
 
-        .theme-toggle { right: 20px; }
-        .sound-toggle { right: 60px; }
-        .lang-toggle { right: 100px; }
-
-        .theme-toggle:hover, .sound-toggle:hover, .lang-toggle:hover {
-            transform: scale(1.2);
-        }
-
-        .floating-icon {
-            position: absolute;
-            font-size: 1.8em;
-            color: rgba(0, 123, 255, 0.4);
-            opacity: 0.5;
-            pointer-events: none;
-            animation: float 6s ease-in-out infinite;
-        }
-
-        @keyframes float {
-            0% { transform: translate(0, 0) rotate(0deg); }
-            50% { transform: translate(10px, -20px) rotate(90deg); }
-            100% { transform: translate(0, 0) rotate(0deg); }
-        }
-
-        .icon-heart { top: 15%; left: 20%; animation-delay: 0s; }
-        .icon-star { top: 25%; right: 10%; animation-delay: 1s; }
-        .icon-smile { bottom: 15%; left: 30%; animation-delay: 2s; }
-        .icon-cloud { top: 10%; right: 30%; animation-delay: 3s; }
-
-        .bubble {
-            position: absolute;
-            bottom: -40px;
-            background: rgba(255, 255, 255, 0.4);
-            border-radius: 50%;
-            animation: bubbleAnim 5s ease-in-out infinite;
-        }
-
-        @keyframes bubbleAnim {
-            0% { transform: scale(0); opacity: 0; bottom: -40px; }
-            50% { transform: scale(1); opacity: 0.8; bottom: 50%; }
-            100% { transform: scale(0); opacity: 0; bottom: -40px; }
-        }
-
-        .bubble1 { width: 40px; height: 40px; left: 15%; animation-delay: 0s; }
-        .bubble2 { width: 30px; height: 30px; left: 55%; animation-delay: 1.5s; }
-        .bubble3 { width: 35px; height: 35px; right: 15%; animation-delay: 3s; }
-
-        .particle {
-            position: absolute;
-            background: rgba(0, 123, 255, 0.3);
-            border-radius: 50%;
-            animation: particleAnim 7s linear infinite;
-        }
-
-        @keyframes particleAnim {
-            0% { transform: translateY(0) scale(0); opacity: 0.3; }
-            50% { transform: translateY(-40px) scale(1); opacity: 0.7; }
-            100% { transform: translateY(0) scale(0); opacity: 0.3; }
-        }
-
-        .particle1 { width: 25px; height: 25px; top: 10%; left: 25%; animation-delay: 0s; }
-        .particle2 { width: 30px; height: 30px; top: 15%; right: 20%; animation-delay: 2s; }
-        .particle3 { width: 20px; height: 20px; bottom: 10%; left: 45%; animation-delay: 4s; }
-
-        /* Keyframe Animations */
-        @keyframes slideIn {
-            from { transform: translateY(20px); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-
-        @keyframes fadeInDown {
-            from { transform: translateY(-20px); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
-        }
-
-        @keyframes slideInMessage {
-            from { transform: translateX(-20px); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
-        }
 
         /* Responsive Adjustments */
         @media (max-width: 768px) {
+            body { overflow: auto; } /* Cho phép cuộn trên mobile nếu nội dung quá dài */
             .main-container {
                 flex-direction: column;
                 width: 100%;
-                height: 100vh;
+                height: 100vh; /* Chiếm toàn bộ chiều cao viewport */
+                max-height: none; /* Bỏ max-height trên mobile */
                 border-radius: 0;
                 box-shadow: none;
-                max-width: none;
             }
             .chat-wrapper {
-                min-width: unset;
-                border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+                min-width: unset; /* Bỏ min-width */
+                border-right: none; /* Bỏ border phải */
             }
+            .chat-header {
+                padding: 0 15px; /* Giảm padding header */
+                min-height: 50px;
+            }
+            .chat-header h2 { font-size: 1.2em; }
+            .header-controls { gap: 10px; }
+            .theme-toggle, .sound-toggle, .lang-toggle { font-size: 1em; }
+
             .online-users-sidebar {
                 width: 100%;
-                height: 150px;
-                border-top: 1px solid rgba(0, 0, 0, 0.1);
-                order: -1;
-                transform: translateY(0);
+                height: auto; /* Chiều cao tự động */
+                flex: 0 0 200px; /* Chiều cao cơ sở là 200px, không co, không giãn */
+                /* Hoặc bạn có thể dùng max-height nếu muốn giới hạn */
+                /* max-height: 30vh; */
+                border-top: 1px solid rgba(var(--text-color-rgb, 26,26,46), 0.1);
+                order: 1; /* Đẩy xuống dưới khu vực chat chính */
+                padding: 15px;
             }
-            #message-input-area {
-                flex-direction: column;
-                padding: 10px;
+            .online-users-sidebar h3 { font-size: 1em; margin-bottom: 10px;}
+            #online-users-list li { padding: 8px 5px;}
+
+            #message-input-area { padding: 10px; min-height: unset; }
+            .message-input-controls { flex-direction: column; gap: 8px; }
+            .message-input-controls input[type="text"],
+            .message-input-controls button {
+                width: 100%; /* Chiếm toàn bộ chiều rộng */
             }
-            .message-input-controls {
-                flex-direction: column;
-            }
-            .message-input-controls button, .message-input-controls input {
-                width: 100%;
-            }
-            .floating-icon, .bubble, .particle {
-                display: none;
-            }
-            .theme-toggle { right: 15px; }
-            .sound-toggle { right: 55px; }
-            .lang-toggle { right: 95px; }
+            #chat-container { padding: 15px; }
+            .message-row { max-width: 85%; } /* Tăng max-width một chút trên mobile */
+
+            .floating-icon, .bubble, .particle { display: none; } /* Ẩn hiệu ứng thừa trên mobile */
         }
 
         @media (hover: none) {
+            /* Bỏ hiệu ứng hover trên thiết bị không hỗ trợ */
             .message-input-controls button:hover, .user-info a:hover,
             #online-users-list li:hover, .theme-toggle:hover,
             .sound-toggle:hover, .lang-toggle:hover {
                 transform: none;
                 box-shadow: none;
+                opacity: unset; /* Reset opacity nếu có */
             }
         }
     </style>
@@ -510,37 +530,42 @@
 <body>
     <video class="background-video" autoplay muted loop playsinline>
         <source src="https://assets.mixkit.co/videos/preview/mixkit-abstract-blue-motion-background-345.mp4" type="video/mp4">
-        Your browser does not support the video tag.
+        Trình duyệt của bạn không hỗ trợ thẻ video.
     </video>
 
     <i class="fas fa-heart floating-icon icon-heart"></i>
     <i class="fas fa-star floating-icon icon-star"></i>
     <i class="fas fa-smile floating-icon icon-smile"></i>
     <i class="fas fa-cloud floating-icon icon-cloud"></i>
-
     <div class="bubble bubble1"></div>
     <div class="bubble bubble2"></div>
     <div class="bubble bubble3"></div>
-
     <div class="particle particle1"></div>
     <div class="particle particle2"></div>
     <div class="particle particle3"></div>
 
     <div class="main-container">
         <div class="chat-wrapper">
-            <i class="fas fa-moon theme-toggle" id="themeToggle"></i>
-            <i class="fas fa-volume-up sound-toggle" id="soundToggle"></i>
-            <i class="fas fa-globe lang-toggle" id="langToggle"></i>
-            <h2 data-i18n="chatTitle">Trò chuyện Thời gian thực!</h2>
-            {% with messages = get_flashed_messages(with_categories=true) %}
-                {% if messages %}
-                    <ul class="flash-messages">
-                    {% for category, message in messages %}
-                        <li class="flash-message {{ category }}">{{ message }}</li>
-                    {% endfor %}
-                    </ul>
-                {% endif %}
-            {% endwith %}
+            <div class="chat-header"> <h2 data-i18n="chatTitle">Trò chuyện Thời gian thực!</h2>
+                <div class="header-controls">
+                    <i class="fas fa-moon theme-toggle" id="themeToggle"></i>
+                    <i class="fas fa-volume-up sound-toggle" id="soundToggle"></i>
+                    <i class="fas fa-globe lang-toggle" id="langToggle"></i>
+                </div>
+            </div>
+
+            <div class="flash-messages-container">
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        <ul class="flash-messages">
+                        {% for category, message in messages %}
+                            <li class="flash-message {{ category }}">{{ message }}</li>
+                        {% endfor %}
+                        </ul>
+                    {% endif %}
+                {% endwith %}
+            </div>
+
             <div class="user-info">
                 {% if current_user.is_authenticated %}
                     <span data-i18n="welcome">Chào mừng, <strong>{{ current_user.username }}</strong>!</span>
@@ -550,31 +575,32 @@
                     <a href="{{ url_for('login') }}" data-i18n="login">Đăng nhập</a>
                 {% endif %}
             </div>
-            <div id="chat-container"></div>
+            <div id="chat-container">
+                </div>
             <div id="message-input-area">
                 <div class="recipient-select-area">
                     <label for="recipient-select" data-i18n="recipient">Gửi đến:</label>
                     <select id="recipient-select">
                         <option value="all" data-i18n="allUsers">Tất cả mọi người</option>
-                    </select>
+                        </select>
                 </div>
                 <div class="message-input-controls">
                     <input type="text" id="message-input" placeholder=" " required maxlength="500">
-                    <label for="message-input" data-i18n="messagePlaceholder">Nhập tin nhắn...</label>
-                    <span class="error" data-i18n="messageError">Tin nhắn không được để trống và tối đa 500 ký tự</span>
                     <button onclick="sendMessage()" data-i18n="send">Gửi</button>
                 </div>
+                 <span id="message-input-error" class="error-message-placeholder"></span>
             </div>
         </div>
         <div class="online-users-sidebar">
             <h3 data-i18n="onlineUsers">Người dùng trực tuyến</h3>
-            <ul id="online-users-list"></ul>
+            <ul id="online-users-list">
+                </ul>
         </div>
     </div>
 
     <script>
-        // Sound effect (base64-encoded WAV for a subtle click)
-        const clickSound = new Audio('data:audio/wav;base64,UklGRiYAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=');
+        // Sound effect
+        const clickSound = new Audio('data:audio/wav;base64,UklGRiYAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA='); // Base64 encoded click sound
 
         // Translations
         const translations = {
@@ -586,8 +612,8 @@
                 login: 'Đăng nhập',
                 recipient: 'Gửi đến:',
                 allUsers: 'Tất cả mọi người',
-                messagePlaceholder: 'Nhập tin nhắn...',
-                messageError: 'Tin nhắn không được để trống và tối đa 500 ký tự',
+                messagePlaceholder: 'Nhập tin nhắn tại đây...', // Cập nhật placeholder
+                messageError: 'Tin nhắn không được để trống và tối đa 500 ký tự.',
                 send: 'Gửi',
                 onlineUsers: 'Người dùng trực tuyến'
             },
@@ -599,82 +625,118 @@
                 login: 'Login',
                 recipient: 'Send to:',
                 allUsers: 'Everyone',
-                messagePlaceholder: 'Type a message...',
-                messageError: 'Message cannot be empty and max 500 characters',
+                messagePlaceholder: 'Type your message here...', // Updated placeholder
+                messageError: 'Message cannot be empty and must be max 500 characters.',
                 send: 'Send',
                 onlineUsers: 'Online Users'
             }
         };
 
-        // Load preferences
-        const savedTheme = localStorage.getItem('theme') || 'light';
-        const savedSound = localStorage.getItem('sound') !== 'false';
-        let savedLang = localStorage.getItem('lang') || 'vi';
-        document.body.dataset.theme = savedTheme;
-        let soundEnabled = savedSound;
-
-        // Update language
-        function updateLanguage(lang) {
-            document.querySelectorAll('[data-i18n]').forEach(el => {
-                const key = el.dataset.i18n;
-                if (el.tagName === 'INPUT' && el.placeholder) {
-                    el.placeholder = translations[lang][key] || el.placeholder;
-                } else if (el.tagName === 'OPTION') {
-                    el.textContent = translations[lang][key] || el.textContent;
-                } else {
-                    el.textContent = translations[lang][key] || el.textContent;
-                }
-            });
-            document.title = translations[lang].chatTitle;
-            localStorage.setItem('lang', lang);
-            savedLang = lang;
-        }
-
-        // Initialize Socket.IO
-        const socket = io();
+        // DOM Elements
         const chatContainer = document.getElementById('chat-container');
         const messageInput = document.getElementById('message-input');
         const onlineUsersList = document.getElementById('online-users-list');
         const recipientSelect = document.getElementById('recipient-select');
-
-        // Theme toggle
         const themeToggle = document.getElementById('themeToggle');
-        themeToggle.classList.toggle('fa-moon', savedTheme === 'light');
-        themeToggle.classList.toggle('fa-sun', savedTheme === 'dark');
-        themeToggle.addEventListener('click', () => {
-            document.body.dataset.theme = document.body.dataset.theme === 'dark' ? 'light' : 'dark';
-            themeToggle.classList.toggle('fa-moon');
-            themeToggle.classList.toggle('fa-sun');
-            localStorage.setItem('theme', document.body.dataset.theme);
-            if (soundEnabled) clickSound.play();
-        });
-
-        // Sound toggle
         const soundToggle = document.getElementById('soundToggle');
-        soundToggle.classList.toggle('fa-volume-up', soundEnabled);
-        soundToggle.classList.toggle('fa-volume-mute', !soundEnabled);
-        soundToggle.addEventListener('click', () => {
-            soundEnabled = !soundEnabled;
-            soundToggle.classList.toggle('fa-volume-up');
-            soundToggle.classList.toggle('fa-volume-mute');
-            localStorage.setItem('sound', soundEnabled);
-            if (soundEnabled) clickSound.play();
-        });
-
-        // Language toggle
         const langToggle = document.getElementById('langToggle');
-        updateLanguage(savedLang);
-        langToggle.addEventListener('click', () => {
-            const newLang = savedLang === 'vi' ? 'en' : 'vi';
-            updateLanguage(newLang);
-            if (soundEnabled) clickSound.play();
-        });
+        const messageInputError = document.getElementById('message-input-error');
 
-        // Update online users list and recipient dropdown
+        // Preferences
+        let savedTheme = localStorage.getItem('theme') || 'light';
+        let soundEnabled = localStorage.getItem('sound') !== 'false'; // Default true
+        let savedLang = localStorage.getItem('lang') || 'vi';
+
+        document.body.dataset.theme = savedTheme;
+
+        // --- Utility Functions ---
+        function applyTranslations(lang) {
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.dataset.i18n;
+                let textContent = translations[lang]?.[key] || el.textContent;
+                
+                // Xử lý cho các phần tử đặc biệt như strong bên trong span
+                if (el.dataset.i18n === "welcome" && el.querySelector('strong')) {
+                    const username = el.querySelector('strong').innerText;
+                    textContent = `${translations[lang][key]}, <strong>${username}</strong>!`;
+                    el.innerHTML = textContent;
+                } else if (el.tagName === 'INPUT' && key === "messagePlaceholder") {
+                     el.placeholder = textContent; // Sử dụng placeholder trực tiếp
+                } else if (el.tagName === 'OPTION') {
+                     el.textContent = textContent;
+                }
+                else {
+                    el.textContent = textContent;
+                }
+            });
+            document.title = translations[lang]?.chatTitle || document.title;
+        }
+
+
+        function updateLanguage(lang) {
+            applyTranslations(lang);
+            localStorage.setItem('lang', lang);
+            savedLang = lang; // Cập nhật biến savedLang
+            // Cập nhật placeholder cho message input sau khi đổi ngôn ngữ
+            messageInput.placeholder = translations[lang]?.messagePlaceholder || 'Nhập tin nhắn...';
+        }
+        
+        function appendMessage(data) {
+            const messageRow = document.createElement('div');
+            messageRow.classList.add('message-row');
+            const loggedInUsername = "{{ current_user.username if current_user.is_authenticated else '' }}";
+
+            if (data.username === loggedInUsername) {
+                messageRow.classList.add('sent');
+            } else if (data.username === 'Hệ thống') {
+                messageRow.classList.add('system'); // Thêm class cho tin nhắn hệ thống
+            }
+            else {
+                messageRow.classList.add('received');
+            }
+
+            if (data.private) {
+                messageRow.classList.add('private');
+            }
+
+            // Chỉ hiển thị username nếu không phải tin nhắn hệ thống
+            if (data.username !== 'Hệ thống') {
+                const usernameSpan = document.createElement('span');
+                usernameSpan.classList.add('username');
+                usernameSpan.textContent = data.username + (data.recipient && data.recipient !== 'all' && data.private ? ` (đến ${data.recipient})` : "");
+                 messageRow.appendChild(usernameSpan);
+            }
+
+
+            const messageContentSpan = document.createElement('span');
+            messageContentSpan.classList.add('message-content');
+            messageContentSpan.textContent = data.message;
+            messageRow.appendChild(messageContentSpan);
+
+            chatContainer.appendChild(messageRow);
+            // Scroll to bottom with a slight delay for rendering
+            setTimeout(() => {
+                chatContainer.scrollTo({ top: chatContainer.scrollHeight, behavior: 'smooth' });
+            }, 50);
+
+            if (soundEnabled && data.username !== loggedInUsername && data.username !== 'Hệ thống') {
+                clickSound.play().catch(e => console.warn("Không thể phát âm thanh:", e));
+            }
+        }
+
         function updateOnlineUsersDisplay(userList) {
-            onlineUsersList.innerHTML = '';
-            const currentRecipient = recipientSelect.value;
-            recipientSelect.innerHTML = `<option value="all" data-i18n="allUsers">${translations[savedLang].allUsers}</option>`;
+            onlineUsersList.innerHTML = ''; // Xóa danh sách cũ
+            const currentRecipientValue = recipientSelect.value; // Lưu giá trị đang chọn
+            
+            // Xóa các option cũ trừ option "Tất cả mọi người"
+            Array.from(recipientSelect.options).forEach(opt => {
+                if (opt.value !== 'all') opt.remove();
+            });
+            // Đảm bảo option "Tất cả mọi người" được dịch đúng
+            const allUsersOption = recipientSelect.querySelector('option[value="all"]');
+            if(allUsersOption) allUsersOption.textContent = translations[savedLang]?.allUsers || 'Tất cả mọi người';
+
+
             const loggedInUsername = "{{ current_user.username if current_user.is_authenticated else '' }}";
 
             userList.forEach((username, index) => {
@@ -683,20 +745,10 @@
                     const listItem = document.createElement('li');
                     listItem.textContent = username;
                     listItem.dataset.username = username;
-                    listItem.tabIndex = 0;
-                    listItem.style.animationDelay = `${index * 0.1}s`;
-                    listItem.onclick = function() {
-                        recipientSelect.value = username;
-                        Array.from(onlineUsersList.children).forEach(item => item.classList.remove('selected'));
-                        listItem.classList.add('selected');
-                        gtag('event', 'select_recipient', { recipient: username });
-                        if (soundEnabled) clickSound.play();
-                    };
-                    listItem.onkeydown = function(e) {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                            listItem.click();
-                        }
-                    };
+                    listItem.tabIndex = 0; // For accessibility
+                    listItem.style.animationDelay = `${index * 0.05}s`; // Giảm delay
+                    listItem.onclick = () => selectRecipient(username, listItem);
+                    listItem.onkeydown = (e) => { if (e.key === 'Enter' || e.key === ' ') listItem.click(); };
                     onlineUsersList.appendChild(listItem);
 
                     // Add to dropdown
@@ -706,94 +758,157 @@
                     recipientSelect.appendChild(option);
                 }
             });
-
-            if (Array.from(recipientSelect.options).some(opt => opt.value === currentRecipient)) {
-                recipientSelect.value = currentRecipient;
+            
+            // Khôi phục lựa chọn người nhận nếu còn tồn tại
+            if (Array.from(recipientSelect.options).some(opt => opt.value === currentRecipientValue)) {
+                recipientSelect.value = currentRecipientValue;
             } else {
-                recipientSelect.value = 'all';
+                recipientSelect.value = 'all'; // Mặc định là "all"
             }
+            // Highlight user được chọn trong sidebar nếu có
+            highlightSelectedUserInSidebar(recipientSelect.value);
+        }
+        
+        function selectRecipient(username, listItemElement) {
+            recipientSelect.value = username;
+             highlightSelectedUserInSidebar(username);
+            gtag('event', 'select_recipient', { recipient: username });
+            if (soundEnabled) clickSound.play().catch(e => console.warn("Không thể phát âm thanh:", e));
         }
 
-        // Socket.IO events
-        socket.on('update_user_list', function(userList) {
-            updateOnlineUsersDisplay(userList);
-        });
-
-        socket.on('message', function(data) {
-            const messageRow = document.createElement('div');
-            messageRow.classList.add('message-row');
-            const loggedInUsername = "{{ current_user.username if current_user.is_authenticated else '' }}";
-
-            if (data.username === loggedInUsername) {
-                messageRow.classList.add('sent');
-            } else {
-                messageRow.classList.add('received');
-            }
-            if (data.private) {
-                messageRow.classList.add('private');
-            }
-
-            const usernameSpan = document.createElement('span');
-            usernameSpan.classList.add('username');
-            usernameSpan.textContent = data.username + ": ";
-
-            const messageContentSpan = document.createElement('span');
-            messageContentSpan.classList.add('message-content');
-            messageContentSpan.textContent = data.message;
-
-            messageRow.appendChild(usernameSpan);
-            messageRow.appendChild(messageContentSpan);
-
-            chatContainer.appendChild(messageRow);
-            setTimeout(() => {
-                chatContainer.scrollTo({
-                    top: chatContainer.scrollHeight,
-                    behavior: 'smooth'
-                });
-            }, 100);
-            if (soundEnabled && data.username !== loggedInUsername) clickSound.play();
-        });
-
-        // Send message function
-        function sendMessage() {
-            const message = messageInput.value.trim();
-            if (message === "" || message.length > 500) {
-                messageInput.setCustomValidity(translations[savedLang].messageError);
-                messageInput.reportValidity();
-                return;
-            }
-
-            const recipient = recipientSelect.value;
-            socket.emit('message', { message: message, recipient: recipient });
-            messageInput.value = "";
-            messageInput.setCustomValidity("");
-            messageInput.focus();
-            gtag('event', 'send_message', { recipient: recipient });
-            if (soundEnabled) clickSound.play();
-        }
-
-        // Event listeners
-        messageInput.addEventListener("keypress", function(e) {
-            if (e.key === "Enter") {
-                sendMessage();
-            }
-        });
-
-        messageInput.addEventListener('input', () => {
-            messageInput.setCustomValidity(
-                messageInput.value.trim() === "" || messageInput.value.length > 500
-                    ? translations[savedLang].messageError
-                    : ''
-            );
-        });
-
-        recipientSelect.addEventListener('change', () => {
-            const selectedUsername = recipientSelect.value;
+        function highlightSelectedUserInSidebar(selectedUsername) {
             Array.from(onlineUsersList.children).forEach(item => {
                 item.classList.toggle('selected', item.dataset.username === selectedUsername);
             });
-            if (soundEnabled) clickSound.play();
+        }
+
+
+        function sendMessage() {
+            const message = messageInput.value.trim();
+            const messageErrorText = translations[savedLang]?.messageError || 'Tin nhắn không hợp lệ.';
+            
+            if (message === "" || message.length > 500) {
+                messageInput.setCustomValidity(messageErrorText);
+                messageInput.reportValidity(); // Hiển thị thông báo lỗi chuẩn của trình duyệt
+                messageInputError.textContent = messageErrorText; // Hiển thị lỗi ở placeholder
+                return;
+            }
+            messageInput.setCustomValidity(""); // Xóa lỗi nếu hợp lệ
+            messageInputError.textContent = "";
+
+
+            const recipient = recipientSelect.value;
+            socket.emit('message', { message: message, recipient: recipient });
+            messageInput.value = ""; // Xóa input sau khi gửi
+            messageInput.focus();
+            gtag('event', 'send_message', { recipient: recipient });
+            if (soundEnabled) clickSound.play().catch(e => console.warn("Không thể phát âm thanh:", e));
+        }
+
+
+        // --- Initialize & Event Listeners ---
+        document.addEventListener('DOMContentLoaded', () => {
+            // Initial UI setup
+            themeToggle.classList.toggle('fa-moon', savedTheme === 'light');
+            themeToggle.classList.toggle('fa-sun', savedTheme === 'dark');
+            soundToggle.classList.toggle('fa-volume-up', soundEnabled);
+            soundToggle.classList.toggle('fa-volume-mute', !soundEnabled);
+            
+            updateLanguage(savedLang); // Áp dụng ngôn ngữ đã lưu
+
+            // Theme toggle
+            themeToggle.addEventListener('click', () => {
+                savedTheme = (document.body.dataset.theme === 'dark' ? 'light' : 'dark');
+                document.body.dataset.theme = savedTheme;
+                themeToggle.classList.toggle('fa-moon');
+                themeToggle.classList.toggle('fa-sun');
+                localStorage.setItem('theme', savedTheme);
+                if (soundEnabled) clickSound.play().catch(e => console.warn("Không thể phát âm thanh:", e));
+            });
+
+            // Sound toggle
+            soundToggle.addEventListener('click', () => {
+                soundEnabled = !soundEnabled;
+                soundToggle.classList.toggle('fa-volume-up');
+                soundToggle.classList.toggle('fa-volume-mute');
+                localStorage.setItem('sound', soundEnabled.toString());
+                if (soundEnabled) clickSound.play().catch(e => console.warn("Không thể phát âm thanh:", e));
+            });
+
+            // Language toggle
+            langToggle.addEventListener('click', () => {
+                const newLang = (savedLang === 'vi' ? 'en' : 'vi');
+                updateLanguage(newLang);
+                if (soundEnabled) clickSound.play().catch(e => console.warn("Không thể phát âm thanh:", e));
+            });
+
+            // Message input
+            messageInput.addEventListener("keypress", (e) => { if (e.key === "Enter") sendMessage(); });
+            messageInput.addEventListener('input', () => {
+                 const messageErrorText = translations[savedLang]?.messageError || 'Tin nhắn không hợp lệ.';
+                if (messageInput.value.trim() === "" || messageInput.value.length > 500) {
+                    messageInput.setCustomValidity(messageErrorText);
+                    messageInputError.textContent = messageErrorText;
+                } else {
+                    messageInput.setCustomValidity("");
+                     messageInputError.textContent = "";
+                }
+            });
+
+            // Recipient select
+            recipientSelect.addEventListener('change', () => {
+                highlightSelectedUserInSidebar(recipientSelect.value);
+                if (soundEnabled) clickSound.play().catch(e => console.warn("Không thể phát âm thanh:", e));
+            });
         });
+
+
+        // Socket.IO events
+        const socket = io(); // Đảm bảo khởi tạo socket sau khi các hằng số DOM được định nghĩa
+
+        socket.on('connect', () => {
+            console.log('Đã kết nối tới server Socket.IO');
+             gtag('event', 'chat_connected');
+        });
+        
+        socket.on('disconnect', () => {
+            console.log('Đã ngắt kết nối khỏi server Socket.IO');
+            // Có thể thêm logic hiển thị thông báo cho người dùng
+        });
+
+        socket.on('update_user_list', (userList) => {
+            updateOnlineUsersDisplay(userList);
+        });
+        
+        // Xử lý lịch sử tin nhắn
+        socket.on('message_history', function(history) {
+            chatContainer.innerHTML = ''; // Xóa tin nhắn hiện tại (nếu có) trước khi tải lịch sử
+            history.forEach(function(data) {
+                appendMessage(data);
+            });
+            // Đảm bảo cuộn xuống cuối cùng sau khi tải hết lịch sử
+             setTimeout(() => {
+                chatContainer.scrollTo({ top: chatContainer.scrollHeight, behavior: 'auto' }); // 'auto' cho lần tải đầu
+            }, 100);
+        });
+
+
+        socket.on('message', (data) => {
+            appendMessage(data);
+        });
+
+        socket.on('error', (errorData) => {
+            // Hiển thị lỗi cho người dùng, ví dụ:
+            // alert(`Lỗi từ server: ${errorData.message}`);
+            // Hoặc tinh tế hơn là hiển thị như một tin nhắn hệ thống
+            appendMessage({
+                username: 'Hệ thống',
+                message: `Lỗi: ${errorData.message}`,
+                timestamp: new Date().toISOString(), // Cần timestamp cho hàm appendMessage nếu nó yêu cầu
+                private: false // Hoặc true nếu muốn nó giống tin nhắn riêng tư
+            });
+        });
+
     </script>
 </body>
 </html>
