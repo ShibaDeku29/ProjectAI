@@ -8,3 +8,4 @@ Flask-Migrate==4.0.5
 gunicorn==22.0.0
 Flask-Login==0.6.3 # Thêm dòng này
 Werkzeug==3.0.3     # Thêm dòng này (hoặc phiên bản tương thích)
+python-dotenv
