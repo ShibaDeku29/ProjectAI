@@ -1,132 +1,677 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Đăng ký</title>
+    <title data-i18n="registerTitle">Đăng ký</title>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <!-- Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-XXXXXXXXXX');
+    </script>
     <style>
+        :root {
+            --primary-color: #6e8efb;
+            --secondary-color: #a777e3;
+            --text-color: #1a1a2e;
+            --bg-light: rgba(255, 255, 255, 0.95);
+            --bg-dark: rgba(30, 30, 46, 0.95);
+            --input-bg: #f8f9fa;
+        }
+
+        [data-theme="dark"] {
+            --primary-color: #8aaaff;
+            --secondary-color: #c299ff;
+            --text-color: #e0e0e0;
+            --bg-light: var(--bg-dark);
+            --input-bg: #2a2a3b;
+        }
+
         body {
             font-family: 'Roboto', Arial, sans-serif;
-            background-color: #f0f2f5;
+            margin: 0;
+            overflow: hidden;
             display: flex;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
-            margin: 0;
+            position: relative;
         }
-        .container {
-            background-color: #ffffff;
-            border-radius: 12px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-            padding: 30px;
+
+        video.background-video {
+            position: fixed;
+            top: 0;
+            left: 0;
             width: 100%;
-            max-width: 400px;
+            height: 100%;
+            object-fit: cover;
+            z-index: -1;
+            opacity: 0.7;
+        }
+
+        .container {
+            background-color: var(--bg-light);
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            padding: 40px;
+            width: 100%;
+            max-width: 420px;
             text-align: center;
+            position: relative;
+            backdrop-filter: blur(10px);
+            z-index: 10;
         }
+
         h2 {
-            color: #2c3e50;
-            margin-bottom: 25px;
-            font-size: 2em;
+            color: var(--text-color);
+            margin-bottom: 30px;
+            font-size: 2.2em;
+            letter-spacing: 1px;
         }
+
         .form-group {
-            margin-bottom: 15px;
+            margin-bottom: 20px;
             text-align: left;
+            position: relative;
         }
+
         .form-group label {
             display: block;
-            margin-bottom: 5px;
-            font-weight: bold;
-            color: #555;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--text-color);
+            font-size: 0.95em;
+            transition: transform 0.2s ease, color 0.2s ease;
         }
+
+        .form-group input:focus + label,
+        .form-group input:not(:placeholder-shown) + label {
+            transform: translateY(-20px) scale(0.85);
+            color: var(--primary-color);
+        }
+
         .form-group input {
             width: 100%;
-            padding: 12px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
+            padding: 14px 40px 14px 14px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
             font-size: 1em;
             box-sizing: border-box;
+            transition: all 0.3s ease;
+            background: var(--input-bg);
         }
+
         .form-group input:focus {
-            border-color: #28a745; /* Màu xanh lá cho focus */
-            box-shadow: 0 0 0 3px rgba(40, 167, 69, 0.25);
             outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 12px rgba(110, 142, 251, 0.3);
+            background: #fff;
         }
+
+        .form-group .error {
+            color: #ff6b6b;
+            font-size: 0.85em;
+            margin-top: 5px;
+            display: none;
+        }
+
+        .form-group input:invalid[required] + .error {
+            display: block;
+        }
+
+        .password-toggle {
+            position: absolute;
+            right: 14px;
+            top: 42px;
+            cursor: pointer;
+            color: #666;
+            transition: color 0.2s ease;
+        }
+
+        .password-toggle:hover {
+            color: var(--primary-color);
+        }
+
         button {
             width: 100%;
-            padding: 12px;
-            background-color: #28a745;
+            padding: 14px;
+            background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
             color: white;
             border: none;
-            border-radius: 8px;
+            border-radius: 10px;
             font-size: 1.1em;
             cursor: pointer;
-            transition: background-color 0.3s ease;
-            margin-top: 15px;
+            transition: all 0.3s ease;
+            margin-top: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            position: relative;
         }
+
+        button.loading::after {
+            content: '';
+            width: 20px;
+            height: 20px;
+            border: 2px solid white;
+            border-top: 2px solid transparent;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            position: absolute;
+            right: 20px;
+        }
+
         button:hover {
-            background-color: #218838;
+            background: linear-gradient(90deg, var(--secondary-color), var(--primary-color));
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(110, 142, 251, 0.4);
         }
+
+        button:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(110, 142, 251, 0.3);
+        }
+
+        .social-login {
+            margin-top: 20px;
+            display: flex;
+            gap: 10px;
+            flex-direction: column;
+        }
+
+        .social-button {
+            padding: 12px;
+            border-radius: 10px;
+            font-size: 1em;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            text-decoration: none;
+            color: white;
+            transition: all 0.3s ease;
+        }
+
+        .google-button {
+            background-color: #4285f4;
+        }
+
+        .google-button:hover {
+            background-color: #3578e5;
+            transform: translateY(-2px);
+        }
+
+        .facebook-button {
+            background-color: #3b5998;
+        }
+
+        .facebook-button:hover {
+            background-color: #2d4373;
+            transform: translateY(-2px);
+        }
+
         .flash-message {
-            padding: 10px;
-            margin-bottom: 15px;
-            border-radius: 5px;
-            font-weight: bold;
+            padding: 12px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            font-weight: 500;
+            font-size: 0.95em;
+            position: relative;
         }
+
         .flash-message.success {
-            background-color: #d4edda;
-            color: #155724;
+            background-color: #e6f4ea;
+            color: #1a4731;
             border: 1px solid #c3e6cb;
         }
+
         .flash-message.danger {
-            background-color: #f8d7da;
-            color: #721c24;
+            background-color: #fce8e6;
+            color: #5c1c1a;
             border: 1px solid #f5c6cb;
         }
+
         .flash-message.info {
-            background-color: #d1ecf1;
-            color: #0c5460;
+            background-color: #e7f3fe;
+            color: #1c2526;
             border: 1px solid #bee5eb;
         }
+
+        .flash-message .close {
+            position: absolute;
+            right: 10px;
+            top: 10px;
+            cursor: pointer;
+            font-size: 0.9em;
+            color: inherit;
+        }
+
         .links {
-            margin-top: 20px;
+            margin-top: 25px;
             font-size: 0.9em;
         }
+
         .links a {
-            color: #007bff;
+            color: var(--primary-color);
             text-decoration: none;
+            font-weight: 500;
+            transition: color 0.2s ease;
         }
-        .links a:hover {
+
+        .links a:hover,
+        .links a:focus {
+            color: var(--secondary-color);
             text-decoration: underline;
+        }
+
+        .icon-spin {
+            animation: spin 1.5s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .floating-icon {
+            position: absolute;
+            font-size: 1.8em;
+            color: rgba(110, 142, 251, 0.4);
+            opacity: 0.5;
+            pointer-events: none;
+            animation: float 6s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0% { transform: translate(0, 0) rotate(0deg); }
+            50% { transform: translate(10px, -20px) rotate(90deg); }
+            100% { transform: translate(0, 0) rotate(0deg); }
+        }
+
+        .icon-heart { top: 15%; left: 20%; animation-delay: 0s; }
+        .icon-star { top: 25%; right: 10%; animation-delay: 1s; }
+        .icon-smile { bottom: 15%; left: 30%; animation-delay: 2s; }
+        .icon-cloud { top: 10%; right: 30%; animation-delay: 3s; }
+
+        .bubble {
+            position: absolute;
+            bottom: -40px;
+            background: rgba(255, 255, 255, 0.4);
+            border-radius: 50%;
+            animation: bubbleAnim 5s ease-in-out infinite;
+        }
+
+        @keyframes bubbleAnim {
+            0% { transform: scale(0); opacity: 0; bottom: -40px; }
+            50% { transform: scale(1); opacity: 0.8; bottom: 50%; }
+            100% { transform: scale(0); opacity: 0; bottom: -40px; }
+        }
+
+        .bubble1 { width: 40px; height: 40px; left: 15%; animation-delay: 0s; }
+        .bubble2 { width: 30px; height: 30px; left: 55%; animation-delay: 1.5s; }
+        .bubble3 { width: 35px; height: 35px; right: 15%; animation-delay: 3s; }
+
+        .particle {
+            position: absolute;
+            background: rgba(110, 142, 251, 0.3);
+            border-radius: 50%;
+            animation: particleAnim 7s linear infinite;
+        }
+
+        @keyframes particleAnim {
+            0% { transform: translateY(0) scale(0); opacity: 0.3; }
+            50% { transform: translateY(-40px) scale(1); opacity: 0.7; }
+            100% { transform: translateY(0) scale(0); opacity: 0.3; }
+        }
+
+        .particle1 { width: 25px; height: 25px; top: 10%; left: 25%; animation-delay: 0s; }
+        .particle2 { width: 30px; height: 30px; top: 15%; right: 20%; animation-delay: 2s; }
+        .particle3 { width: 20px; height: 20px; bottom: 10%; left: 45%; animation-delay: 4s; }
+
+        .typing-effect {
+            display: inline-block;
+            border-right: 3px solid #fff;
+            padding-right: 6px;
+            font-size: 1em;
+            animation: typing 2.5s steps(12) forwards, blink 0.8s step-end infinite;
+            white-space: nowrap;
+            overflow: hidden;
+        }
+
+        @keyframes typing {
+            from { width: 0; }
+            to { width: 100%; }
+        }
+
+        @keyframes blink {
+            50% { border-color: transparent; }
+        }
+
+        .theme-toggle, .sound-toggle, .lang-toggle {
+            position: absolute;
+            cursor: pointer;
+            font-size: 1.2em;
+            color: var(--text-color);
+            transition: transform 0.3s ease;
+        }
+
+        .theme-toggle { top: 20px; right: 20px; }
+        .sound-toggle { top: 20px; right: 60px; }
+        .lang-toggle { top: 20px; right: 100px; }
+
+        .theme-toggle:hover, .sound-toggle:hover, .lang-toggle:hover {
+            transform: scale(1.2);
+        }
+
+        .captcha-placeholder {
+            margin: 20px 0;
+            padding: 15px;
+            background: #f0f0f0;
+            border-radius: 8px;
+            text-align: center;
+            font-size: 0.9em;
+            color: #666;
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 20px;
+                margin: 15px;
+            }
+            h2 {
+                font-size: 1.8em;
+            }
+            button, .social-button {
+                font-size: 1em;
+                padding: 12px;
+            }
+            .floating-icon, .bubble, .particle {
+                display: none;
+            }
+            .form-group input {
+                padding-right: 40px;
+            }
+            .theme-toggle { right: 15px; }
+            .sound-toggle { right: 55px; }
+            .lang-toggle { right: 95px; }
+        }
+
+        @media (hover: none) {
+            button:hover, .social-button:hover, .links a:hover,
+            .password-toggle:hover, .theme-toggle:hover,
+            .sound-toggle:hover, .lang-toggle:hover {
+                transform: none;
+                box-shadow: none;
+            }
         }
     </style>
 </head>
 <body>
+    <video class="background-video" autoplay muted loop playsinline>
+        <source src="https://assets.mixkit.co/videos/preview/mixkit-abstract-blue-motion-background-345.mp4" type="video/mp4">
+        Trình duyệt của bạn không hỗ trợ video tag.
+    </video>
+
+    <i class="fas fa-heart floating-icon icon-heart"></i>
+    <i class="fas fa-star floating-icon icon-star"></i>
+    <i class="fas fa-smile floating-icon icon-smile"></i>
+    <i class="fas fa-cloud floating-icon icon-cloud"></i>
+
+    <div class="bubble bubble1"></div>
+    <div class="bubble bubble2"></div>
+    <div class="bubble bubble3"></div>
+
+    <div class="particle particle1"></div>
+    <div class="particle particle2"></div>
+    <div class="particle particle3"></div>
+
     <div class="container">
-        <h2>Đăng ký tài khoản</h2>
+        <i class="fas fa-moon theme-toggle" id="themeToggle" role="button" aria-label="Chuyển đổi giao diện" tabindex="0"></i>
+        <i class="fas fa-volume-up sound-toggle" id="soundToggle" role="button" aria-label="Bật/tắt âm thanh" tabindex="0"></i>
+        <i class="fas fa-globe lang-toggle" id="langToggle" role="button" aria-label="Chuyển đổi ngôn ngữ" tabindex="0"></i>
+        <h2 data-i18n="register">Đăng ký</h2>
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
                 <ul class="flash-messages">
                 {% for category, message in messages %}
-                    <li class="flash-message {{ category }}">{{ message }}</li>
+                    <li class="flash-message {{ category }}">{{ message }}<span class="close" onclick="this.parentElement.remove()">✕</span></li>
                 {% endfor %}
                 </ul>
             {% endif %}
         {% endwith %}
-        <form method="POST">
+        <form method="POST" id="registerForm">
             <div class="form-group">
-                <label for="username">Tên người dùng:</label>
-                <input type="text" id="username" name="username" required>
+                <input type="text" id="username" name="username" required placeholder=" " value="{{ username if username else '' }}">
+                <label for="username" data-i18n="username">Tên người dùng:</label>
+                <span class="error" data-i18n="usernameError">Tên người dùng phải từ 3-20 ký tự</span>
             </div>
             <div class="form-group">
-                <label for="password">Mật khẩu:</label>
-                <input type="password" id="password" name="password" required>
+                <input type="email" id="email" name="email" placeholder=" " value="{{ email if email else '' }}">
+                <label for="email" data-i18n="email">Email:</label>
+                <span class="error" data-i18n="emailError">Vui lòng nhập email hợp lệ</span>
             </div>
-            <button type="submit">Đăng ký</button>
+            <div class="form-group">
+                <input type="text" id="full_name" name="full_name" placeholder=" " value="{{ full_name if full_name else '' }}">
+                <label for="full_name" data-i18n="fullName">Họ và tên:</label>
+                <span class="error" data-i18n="fullNameError">Họ và tên phải từ 2-50 ký tự</span>
+            </div>
+            <div class="form-group">
+                <input type="password" id="password" name="password" required placeholder=" ">
+                <label for="password" data-i18n="password">Mật khẩu:</label>
+                <i class="fas fa-eye password-toggle" id="passwordToggle"></i>
+                <span class="error" data-i18n="passwordError">Mật khẩu phải từ 6 ký tự trở lên</span>
+            </div>
+            <div class="captcha-placeholder">
+                [Thêm reCAPTCHA hoặc CAPTCHA tùy chỉnh tại đây]
+            </div>
+            <button type="submit" data-i18n="registerButton">
+                <i class="fas fa-user-plus icon-spin"></i> 
+                <span class="typing-effect">Đăng ký...</span>
+            </button>
         </form>
+        <div class="social-login">
+            <a href="/auth/google" class="social-button google-button">
+                <i class="fab fa-google"></i> <span data-i18n="googleRegister">Đăng ký với Google</span>
+            </a>
+            <a href="/auth/facebook" class="social-button facebook-button">
+                <i class="fab fa-facebook-f"></i> <span data-i18n="facebookRegister">Đăng ký với Facebook</span>
+            </a>
+        </div>
         <div class="links">
-            Đã có tài khoản? <a href="{{ url_for('login') }}">Đăng nhập ngay</a>
+            <span data-i18n="haveAccount">Đã có tài khoản?</span> 
+            <a href="{{ url_for('login') }}" data-i18n="login">Đăng nhập ngay</a>
         </div>
     </div>
+
+    <script>
+        // Sound effect
+        const clickSound = new Audio('data:audio/wav;base64,UklGRiYAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=');
+
+        // Translations
+        const translations = {
+            vi: {
+                registerTitle: 'Đăng ký',
+                register: 'Đăng ký',
+                username: 'Tên người dùng:',
+                email: 'Email:',
+                fullName: 'Họ và tên:',
+                password: 'Mật khẩu:',
+                usernameError: 'Tên người dùng phải từ 3-20 ký tự',
+                emailError: 'Vui lòng nhập email hợp lệ',
+                fullNameError: 'Họ và tên phải từ 2-50 ký tự',
+                passwordError: 'Mật khẩu phải từ 6 ký tự trở lên',
+                registerButton: 'Đăng ký...',
+                googleRegister: 'Đăng ký với Google',
+                facebookRegister: 'Đăng ký với Facebook',
+                haveAccount: 'Đã có tài khoản?',
+                login: 'Đăng nhập ngay'
+            },
+            en: {
+                registerTitle: 'Register',
+                register: 'Register',
+                username: 'Username:',
+                email: 'Email:',
+                fullName: 'Full Name:',
+                password: 'Password:',
+                usernameError: 'Username must be 3-20 characters',
+                emailError: 'Please enter a valid email',
+                fullNameError: 'Full name must be 2-50 characters',
+                passwordError: 'Password must be at least 6 characters',
+                registerButton: 'Register...',
+                googleRegister: 'Register with Google',
+                facebookRegister: 'Register with Facebook',
+                haveAccount: 'Already have an account?',
+                login: 'Login now'
+            }
+        };
+
+        // Load preferences
+        let savedTheme = localStorage.getItem('theme') || 'light';
+        let savedSound = localStorage.getItem('sound') !== 'false';
+        let savedLang = localStorage.getItem('lang') || 'vi';
+        document.body.dataset.theme = savedTheme;
+        let soundEnabled = savedSound;
+
+        // Update language
+        function updateLanguage(lang) {
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.dataset.i18n;
+                el.textContent = translations[lang][key] || el.textContent;
+                if (el.tagName === 'BUTTON') {
+                    el.querySelector('.typing-effect').textContent = translations[lang][key];
+                }
+            });
+            document.title = translations[lang].registerTitle;
+            localStorage.setItem('lang', lang);
+            savedLang = lang;
+        }
+
+        // Initialize UI
+        document.addEventListener('DOMContentLoaded', () => {
+            // Form elements
+            const usernameInput = document.getElementById('username');
+            const emailInput = document.getElementById('email');
+            const fullNameInput = document.getElementById('full_name');
+            const passwordInput = document.getElementById('password');
+            const passwordToggle = document.getElementById('passwordToggle');
+            const form = document.getElementById('registerForm');
+            const themeToggle = document.getElementById('themeToggle');
+            const soundToggle = document.getElementById('soundToggle');
+            const langToggle = document.getElementById('langToggle');
+
+            // Password visibility toggle
+            passwordToggle.addEventListener('click', () => {
+                const type = passwordInput.type === 'password' ? 'text' : 'password';
+                passwordInput.type = type;
+                passwordToggle.classList.toggle('fa-eye');
+                passwordToggle.classList.toggle('fa-eye-slash');
+                if (soundEnabled) clickSound.play();
+            });
+
+            // Theme toggle
+            themeToggle.classList.toggle('fa-moon', savedTheme === 'light');
+            themeToggle.classList.toggle('fa-sun', savedTheme === 'dark');
+            themeToggle.addEventListener('click', () => {
+                savedTheme = document.body.dataset.theme === 'dark' ? 'light' : 'dark';
+                document.body.dataset.theme = savedTheme;
+                themeToggle.classList.toggle('fa-moon');
+                themeToggle.classList.toggle('fa-sun');
+                localStorage.setItem('theme', savedTheme);
+                if (soundEnabled) clickSound.play();
+            });
+            themeToggle.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    themeToggle.click();
+                }
+            });
+
+            // Sound toggle
+            soundToggle.classList.toggle('fa-volume-up', soundEnabled);
+            soundToggle.classList.toggle('fa-volume-mute', !soundEnabled);
+            soundToggle.addEventListener('click', () => {
+                soundEnabled = !soundEnabled;
+                soundToggle.classList.toggle('fa-volume-up');
+                soundToggle.classList.toggle('fa-volume-mute');
+                localStorage.setItem('sound', soundEnabled);
+                if (soundEnabled) clickSound.play();
+            });
+            soundToggle.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    soundToggle.click();
+                }
+            });
+
+            // Language toggle
+            updateLanguage(savedLang);
+            langToggle.addEventListener('click', () => {
+                const newLang = savedLang === 'vi' ? 'en' : 'vi';
+                updateLanguage(newLang);
+                if (soundEnabled) clickSound.play();
+            });
+            langToggle.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    langToggle.click();
+                }
+            });
+
+            // Form submission handling
+            form.addEventListener('submit', (e) => {
+                const button = form.querySelector('button');
+                button.classList.add('loading');
+                gtag('event', 'register_attempt', { method: 'form' });
+                if (soundEnabled) clickSound.play();
+            });
+
+            // Social login analytics
+            document.querySelectorAll('.social-button').forEach(button => {
+                button.addEventListener('click', () => {
+                    const provider = button.classList.contains('google-button') ? 'google' : 'facebook';
+                    gtag('event', 'register_attempt', { method: provider });
+                    if (soundEnabled) clickSound.play();
+                });
+            });
+
+            // Input validation
+            usernameInput.addEventListener('input', () => {
+                usernameInput.setCustomValidity(
+                    usernameInput.value.length < 3 || usernameInput.value.length > 20
+                        ? translations[savedLang].usernameError
+                        : ''
+                );
+            });
+
+            emailInput.addEventListener('input', () => {
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                emailInput.setCustomValidity(
+                    emailInput.value && !emailRegex.test(emailInput.value)
+                        ? translations[savedLang].emailError
+                        : ''
+                );
+            });
+
+            fullNameInput.addEventListener('input', () => {
+                fullNameInput.setCustomValidity(
+                    fullNameInput.value && (fullNameInput.value.length < 2 || fullNameInput.value.length > 50)
+                        ? translations[savedLang].fullNameError
+                        : ''
+                );
+            });
+
+            passwordInput.addEventListener('input', () => {
+                passwordInput.setCustomValidity(
+                    passwordInput.value.length < 6
+                        ? translations[savedLang].passwordError
+                        : ''
+                );
+            });
+        });
+    </script>
 </body>
 </html>
