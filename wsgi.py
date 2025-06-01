@@ -1,4 +1,4 @@
-v# wsgi.py
+# wsgi.py
 import eventlet
 eventlet.monkey_patch() # Quan trọng: Gọi monkey_patch() ở đây, ngay từ đầu.
 
