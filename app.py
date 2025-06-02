@@ -100,7 +100,7 @@ class Message(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     conversation_id = db.Column(db.Integer, db.ForeignKey('conversation.id', name='fk_message_conversation_id'), nullable=False, index=True)
     sender_id = db.Column(db.Integer, db.ForeignKey('user.id', name='fk_message_sender_id'), nullable=False)
-    content = db.Column(db.Text, nullable=False)
+    message_content = db.Column(db.Text, nullable=False)
     timestamp = db.Column(db.DateTime, default=datetime.utcnow, index=True)
     is_read = db.Column(db.Boolean, default=False)
 
@@ -111,7 +111,7 @@ class Message(db.Model):
             'id': self.id,
             'conversation_id': self.conversation_id,
             'sender': self.sender.username,
-            'content': self.content,
+            'content': self.message_content,  # Use message_content for compatibility
             'timestamp': self.timestamp.isoformat(),
             'is_read': self.is_read
         }
